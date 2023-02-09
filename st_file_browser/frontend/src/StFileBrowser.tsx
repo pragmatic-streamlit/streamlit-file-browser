@@ -21,6 +21,25 @@ interface File {
   children: File[];
 }
 
+enum StreamlitEventType {
+  SELECT_FILE = "SELECT_FILE",
+  SELECT_FOLDER = "SELECT_FOLDER",
+  DOWNLOAD = "DOWNLOAD",
+  DELETE_FILE = "DELETE_FILE",
+  DELETE_FOLDER = "DELETE_FOLDER",
+  RENAME_FOLDER = "RENAME_FOLDER",
+  RENAME_FILE = "RENAME_FILE",
+  CREATE_FILE = "CREATE_FILE",
+  CREATE_FOLDER = "CREATE_FOLDER",
+  MOVE_FILE = "MOVE_FILE",
+  MOVE_FOLDER = "MOVE_FOLDER",
+}
+
+interface StreamlitEvent {
+  type: StreamlitEventType;
+  target: File | File[];
+}
+
 interface State {
   numClicks: number
   isFocused: boolean
@@ -29,6 +48,8 @@ interface State {
 interface IArgs {
   files: File[]
 }
+
+const noticeStreamlit = (event: StreamlitEvent) => Streamlit.setComponentValue(event)
 
 const getTimeDiff = (time: number) => (+new Date() - time);
 
@@ -62,7 +83,12 @@ class FileBrowserWrapper extends StreamlitComponentBase<State> {
 
   fileSelectedHandler = (opts: FileBrowserFile) => {
     const file = this.args.files.find(file => file.relative_path === opts.key)
-    Streamlit.setComponentValue(file)
+    file && noticeStreamlit({ type: StreamlitEventType.SELECT_FILE, target: file });
+  }
+
+  downlandHandler = (keys: string[]) => {
+    const files = this.args.files.filter(file => keys.includes(file.relative_path))
+    files.length && noticeStreamlit({ type: StreamlitEventType.DOWNLOAD, target: files });
   }
 
   convertFiles = (files: File[]): FileBrowserFile[] => (
@@ -81,13 +107,15 @@ class FileBrowserWrapper extends StreamlitComponentBase<State> {
       <div>
         <FileBrowser
           {...this.args}
+          showActionBar
           canFilter={false}
           detailRenderer={this.noop}
           icons={Icons.FontAwesome(4)}
           files={this.convertFiles(this.args.files)}
           onFolderOpen={this.folderOpenHandler}
           onFolderClose={this.folderCloseHandler}
-          onSelectFile={this.fileSelectedHandler}
+          onSelect={this.fileSelectedHandler}
+          onDownloadFile={this.downlandHandler}
         />
       </div>
     )

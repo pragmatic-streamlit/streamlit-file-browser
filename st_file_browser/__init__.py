@@ -3,8 +3,9 @@ from functools import reduce
 import streamlit.components.v1 as components
 
 _DEVELOP_MODE = os.getenv('DEVELOP_MODE')
+# _DEVELOP_MODE = True
 
-if not _DEVELOP_MODE:
+if _DEVELOP_MODE:
     _component_func = components.declare_component(
         "st_file_browser",
         url="http://localhost:3001",
@@ -56,7 +57,33 @@ def st_file_browser(path: str):
     component_value = _component_func(files=flat_files)
     return component_value
 
-if not _DEVELOP_MODE:
+if _DEVELOP_MODE:
+    import viz
+    import pandas as pd
+    import streamlit as st
+    import json
     test_path = "../test"
-    selected_file = st_file_browser(test_path)
-    print("selected file: ", selected_file)
+    event = st_file_browser(test_path)
+    def show_file_content(selected_file):
+        support_exts = {
+            "sdf": viz.show_ligand,
+            "csv": lambda path: st.dataframe(pd.read_csv(path)),
+            "mol": viz.show_molecule,
+            "pdb": viz.show_protein,
+            "json": lambda path: st.json(json.loads((f := open(path), f.read(), f.close())[1])),
+            "txt": lambda path: st.write((f := open(path), f.read(), f.close())[1])
+        }
+        if selected_file:
+            ext = os.path.splitext(selected_file["name"])[1][1:]
+            if ext in support_exts:
+                support_exts[ext](selected_file["absolute_path"])
+
+    if event:
+        if event["type"] == "SELECT_FILE":
+            file = event["target"]
+            show_file_content(file)
+        elif event["type"] == "DOWNLOAD":
+            ...
+        else:
+            print(f'\033[1;31maction({event["type"]}) be not supported\033[0m')
+            
