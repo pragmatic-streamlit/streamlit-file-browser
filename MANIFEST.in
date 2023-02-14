@@ -1,1 +1,1 @@
-recursive-include st_file_browser/frontend/build *
+recursive-include streamlit_file_browser/frontend/build *

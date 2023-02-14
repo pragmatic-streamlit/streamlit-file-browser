@@ -1,0 +1,24 @@
+http://localhost:1024 {
+    log {
+        output stdout
+        level DEBUG
+    }
+    header /download/artifacts/* {
+        +Content-Disposition "attachment"
+    }
+    route /download/artifacts/* {
+        uri strip_prefix /download/artifacts
+        file_server {
+            root ./example_artifacts/
+            disable_canonical_uris
+        }
+    }  
+    route /artifacts/* {
+        uri strip_prefix /artifacts
+        file_server {
+            root ./example_artifacts/
+            disable_canonical_uris
+        }
+    }
+    reverse_proxy /* 0.0.0.0:8501
+}
