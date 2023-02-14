@@ -12,7 +12,7 @@ from streamlit_molstar import st_molstar, st_molstar_remote
 
 
 _DEVELOP_MODE = os.getenv('DEVELOP_MODE')
-_DEVELOP_MODE = True
+# _DEVELOP_MODE = True
 
 if _DEVELOP_MODE:
     _component_func = components.declare_component(
