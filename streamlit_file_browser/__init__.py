@@ -1,5 +1,6 @@
 import os
 import glob
+import pathlib
 from urllib.parse import urljoin
 from html import escape
 from base64 import b64encode
@@ -98,18 +99,17 @@ def _get_file_info(root, path):
         "create_time": stat.st_ctime,
         "update_time": stat.st_mtime,
         "access_time": stat.st_atime,
-        "children": None,
     }
     info['name'] = os.path.basename(path)
-    info['key'] = info['path']
     return info
 
 
 def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
-        file_pattern='**',
+        glob_pattern='*',
         show_choose_file=False, show_download_file=True, artifacts_site=None, key=None):
-    root = os.path.abspath(path)
-    files = [_get_file_info(root, path) for path in glob.glob(f'{root}/{file_pattern}')]
+    root = pathlib.Path(os.path.abspath(path))
+    files = list(filter(lambda item: item.is_file(), root.rglob(glob_pattern)))
+    files = [_get_file_info(str(root), str(path)) for path in files]
     if show_preview and show_preview_top:
         with st.expander('', expanded=True):
             preview = st.container()
@@ -125,7 +125,7 @@ def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
                     _show_file_preview(file, artifacts_site)
             elif show_preview and not show_preview_top:
                 with st.expander('', expanded=True):
-                    _show_file_preview(root, file, artifacts_site)
+                    _show_file_preview(str(root), file, artifacts_site)
     return event
 
 
@@ -139,5 +139,5 @@ if _DEVELOP_MODE:
     st.write(event)
 
     st.header('Show only molecule files')
-    event = st_file_browser("example_artifacts", artifacts_site="http://localhost:1024", show_choose_file=True, show_download_file=False, file_pattern='molecule/**', key='C')
+    event = st_file_browser("example_artifacts", artifacts_site="http://localhost:1024", show_choose_file=True, show_download_file=False, glob_pattern='molecule/*', key='C')
     st.write(event)
