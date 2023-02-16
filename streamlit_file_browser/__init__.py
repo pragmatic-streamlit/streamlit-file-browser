@@ -1,10 +1,8 @@
 import os
-import glob
 import pathlib
 from urllib.parse import urljoin
 from html import escape
 from base64 import b64encode
-from functools import reduce
 
 from filetype import image_match, video_match, audio_match
 import streamlit as st
