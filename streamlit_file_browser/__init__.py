@@ -24,6 +24,11 @@ else:
     _component_func = components.declare_component("streamlit_file_browser", path=build_dir)
 
 
+def _do_code_preview(root, file_path, url):
+    abs_path = os.path.join(root, file_path)
+    with open(abs_path) as f:
+        st.code(f.read())
+
 def _do_pdf_preview(root, file_path, url, height="420px"):
     abs_path = os.path.join(root, file_path)
     if url:
@@ -39,7 +44,14 @@ def _do_pdf_preview(root, file_path, url, height="420px"):
 
 def _do_molecule_preview(root, file_path, url):
     abs_path = os.path.join(root, file_path)
-    return st_molstar_remote(url) if url else st_molstar(abs_path)
+    test_traj_path = os.path.splitext(abs_path)[0] + '.xtc'
+    if os.path.exists(test_traj_path):
+        traj_path = test_traj_path
+        traj_url = os.path.splitext(url)[0] + '.xtc' if url else None
+    else:
+        traj_path = None
+        traj_url = None
+    return st_molstar_remote(url, traj_url) if url else st_molstar(abs_path, traj_path)
 
 def _do_csv_preview(root, file_path, url):
     abs_path = os.path.join(root, file_path)
@@ -64,7 +76,8 @@ PREVIEW_HANDLERS = {
         (('.json',), _do_json_preview),
         (('.pdf',), _do_pdf_preview),
         (('.csv',), _do_csv_preview),
-        (('.log', '.txt', '.md'), _do_plain_preview)
+        (('.log', '.txt', '.md'), _do_plain_preview),
+        (('.py', '.sh'), _do_code_preview)
     ]
     for extention in extentions
 }
@@ -129,7 +142,7 @@ def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
     return event
 
 
-if _DEVELOP_MODE:
+if _DEVELOP_MODE or os.getenv('SHOW_FILE_BROWSER_DEMO'):
     st.header('Default Options')
     event = st_file_browser("example_artifacts", key='A')
     st.write(event)
