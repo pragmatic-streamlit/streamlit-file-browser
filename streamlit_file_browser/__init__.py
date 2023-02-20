@@ -1,10 +1,8 @@
 import os
-import glob
 import pathlib
 from urllib.parse import urljoin
 from html import escape
 from base64 import b64encode
-from functools import reduce
 
 from filetype import image_match, video_match, audio_match
 import streamlit as st
@@ -13,12 +11,12 @@ from streamlit_molstar import st_molstar, st_molstar_remote
 
 
 _DEVELOP_MODE = os.getenv('DEVELOP_MODE')
-#_DEVELOP_MODE = True
+# _DEVELOP_MODE = True
 
 if _DEVELOP_MODE:
     _component_func = components.declare_component(
         "streamlit_file_browser",
-        url="http://localhost:3001",
+        url="http://localhost:3000",
     )
 else:
     parent_dir = os.path.dirname(os.path.abspath(__file__))
