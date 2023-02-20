@@ -105,10 +105,12 @@ def _get_file_info(root, path):
 
 
 def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
-        glob_pattern='*',
+        glob_patterns=('*',),
         show_choose_file=False, show_download_file=True, artifacts_site=None, key=None):
     root = pathlib.Path(os.path.abspath(path))
-    files = list(filter(lambda item: item.is_file(), root.rglob(glob_pattern)))
+    files = []
+    for glob_pattern in glob_patterns:
+        files.extend(list(filter(lambda item: item.is_file(), root.rglob(glob_pattern))))
     files = [_get_file_info(str(root), str(path)) for path in files]
     if show_preview and show_preview_top:
         with st.expander('', expanded=True):
@@ -139,5 +141,5 @@ if _DEVELOP_MODE:
     st.write(event)
 
     st.header('Show only molecule files')
-    event = st_file_browser("example_artifacts", artifacts_site="http://localhost:1024", show_choose_file=True, show_download_file=False, glob_pattern='molecule/*', key='C')
+    event = st_file_browser("example_artifacts", artifacts_site="http://localhost:1024", show_choose_file=True, show_download_file=False, glob_patterns=('molecule/*',), key='C')
     st.write(event)
