@@ -88,7 +88,7 @@ def _show_file_preview(root, selected_file, artifacts_site):
     ext = os.path.splitext(selected_file["name"])[1]
     if ext in PREVIEW_HANDLERS:
         try:
-            url = urljoin(urljoin(artifacts_site, 'artifacts/'), selected_file["path"]) if artifacts_site else None
+            url = urljoin(artifacts_site, selected_file["path"]) if artifacts_site else None
             PREVIEW_HANDLERS[ext](root, selected_file["path"], url)
         except Exception as e:
             st.error(f'failed preview {selected_file["path"]}')
@@ -116,8 +116,10 @@ def _get_file_info(root, path):
 
 
 def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
-        glob_patterns=('*',),
-        show_choose_file=False, show_download_file=True, artifacts_site=None, key=None):
+        glob_patterns=('*',), ignore_file_select_event=False,
+        show_choose_file=False, show_download_file=True, 
+        artifacts_site=None, artifacts_download_site=None,
+        key=None):
     root = pathlib.Path(os.path.abspath(path))
     files = []
     for glob_pattern in glob_patterns:
@@ -126,9 +128,13 @@ def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
     if show_preview and show_preview_top:
         with st.expander('', expanded=True):
             preview = st.container()
+    if not artifacts_download_site and artifacts_site:
+        artifacts_download_site = artifacts_site
     event = _component_func(files=files,
         show_choose_file=show_choose_file,
         show_download_file=show_download_file,
+        ignore_file_select_event=ignore_file_select_event,
+        artifacts_download_site=artifacts_download_site,
         artifacts_site=artifacts_site, key=key)
     if event:
         if event["type"] == "SELECT_FILE":
@@ -147,10 +153,23 @@ if _DEVELOP_MODE or os.getenv('SHOW_FILE_BROWSER_DEMO'):
     event = st_file_browser("example_artifacts", key='A')
     st.write(event)
 
-    st.header('With Artifacts Server, Allow choose file, disable download')
-    event = st_file_browser("example_artifacts", artifacts_site="http://localhost:1024", show_choose_file=True, show_download_file=False, key='B')
+    st.header('With Artifacts Server, Allow choose & download')
+    event = st_file_browser("example_artifacts",
+                            artifacts_site="http://localhost:1024/artifacts/",
+                            artifacts_download_site="http://localhost:1024/download/artifacts/", 
+                            show_choose_file=True, show_download_file=True, key='B')
     st.write(event)
 
     st.header('Show only molecule files')
-    event = st_file_browser("example_artifacts", artifacts_site="http://localhost:1024", show_choose_file=True, show_download_file=False, glob_patterns=('molecule/*',), key='C')
+    event = st_file_browser("example_artifacts",
+                            artifacts_site="http://localhost:1024/artifacts/", 
+                            artifacts_download_site="http://localhost:1024/download/artifacts/", 
+                            show_choose_file=True, show_download_file=True, glob_patterns=('molecule/**/*',), key='C')
+    st.write(event)
+
+    st.header('Show only molecule files in sub directory')
+    event = st_file_browser("example_artifacts/molecule",
+                            artifacts_site="http://localhost:1024/artifacts/molecule/", 
+                            artifacts_download_site="http://localhost:1024/download/artifacts/molecule/", 
+                            show_choose_file=True, show_download_file=True, glob_patterns=('*',), key='D')
     st.write(event)
