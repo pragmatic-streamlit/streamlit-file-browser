@@ -46,9 +46,10 @@ interface State {
 
 interface IArgs {
   files: File[]
-  artifacts_site: string
+  artifacts_download_site: string
   show_download_file: boolean
   show_choose_file: boolean
+  ignore_file_select_event: boolean
 }
 
 const noticeStreamlit = (event: StreamlitEvent) => Streamlit.setComponentValue(event)
@@ -84,14 +85,16 @@ class FileBrowserWrapper extends StreamlitComponentBase<State> {
   folderCloseHandler = (opts: FileBrowserFolder) => this.ajustHeight();
 
   fileSelectedHandler = (opts: FileBrowserFile) => {
-    const file = this.args.files.find(file => file.path === opts.key)
-    file && noticeStreamlit({ type: StreamlitEventType.SELECT_FILE, target: file });
+    if (!this.args.ignore_file_select_event){
+      const file = this.args.files.find(file => file.path === opts.key)
+      file && noticeStreamlit({ type: StreamlitEventType.SELECT_FILE, target: file });
+    }
   }
 
   downlandHandler = (keys: string[]) => {
     const files = this.args.files.filter(file => keys.includes(file.path))
     files.forEach(file => {
-      let url = new URL(file.path, `${this.args.artifacts_site}/download/artifacts/`).toString();
+      let url = new URL(file.path, this.args.artifacts_download_site).toString();
       let filename = url.substring(url.lastIndexOf('/')+1);
       let a = document.createElement('a');
       a.target = "_blank";
@@ -140,7 +143,7 @@ class FileBrowserWrapper extends StreamlitComponentBase<State> {
               ...args[0],
               ...{
               canChooseFile: that.args.show_choose_file,
-              canDownloadFile: that.args.show_download_file && that.args.artifacts_site,
+              canDownloadFile: that.args.show_download_file && that.args.artifacts_download_site,
               onChooseFile: (keys: string[]) => that.chooseHandler(args[0].selectedItems.map((i: any) => i.key))
             }})
             }
