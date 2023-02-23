@@ -119,6 +119,7 @@ def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
         glob_patterns=('*',), ignore_file_select_event=False,
         show_choose_file=False, show_download_file=True, 
         artifacts_site=None, artifacts_download_site=None,
+        default_expand=False,
         key=None):
     root = pathlib.Path(os.path.abspath(path))
     files = []
@@ -135,6 +136,7 @@ def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
         show_download_file=show_download_file,
         ignore_file_select_event=ignore_file_select_event,
         artifacts_download_site=artifacts_download_site,
+        default_expand=default_expand,
         artifacts_site=artifacts_site, key=key)
     if event:
         if event["type"] == "SELECT_FILE":

@@ -50,6 +50,7 @@ interface IArgs {
   show_download_file: boolean
   show_choose_file: boolean
   ignore_file_select_event: boolean
+  default_expand: boolean
 }
 
 const noticeStreamlit = (event: StreamlitEvent) => Streamlit.setComponentValue(event)
@@ -131,6 +132,7 @@ class FileBrowserWrapper extends StreamlitComponentBase<State> {
           {...this.args}
           showActionBar
           canFilter={true}
+          startOpen={this.args.default_expand}
           detailRenderer={this.noop}
           icons={Icons.FontAwesome(4)}
           files={this.convertFiles(this.args.files)}
