@@ -16,7 +16,7 @@ _DEVELOP_MODE = os.getenv('DEVELOP_MODE')
 if _DEVELOP_MODE:
     _component_func = components.declare_component(
         "streamlit_file_browser",
-        url="http://localhost:3000",
+        url="http://localhost:3001",
     )
 else:
     parent_dir = os.path.dirname(os.path.abspath(__file__))
@@ -119,7 +119,6 @@ def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
         glob_patterns=('*',), ignore_file_select_event=False,
         show_choose_file=False, show_download_file=True, 
         artifacts_site=None, artifacts_download_site=None,
-        default_expand=False,
         key=None):
     root = pathlib.Path(os.path.abspath(path))
     files = []
@@ -136,7 +135,6 @@ def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
         show_download_file=show_download_file,
         ignore_file_select_event=ignore_file_select_event,
         artifacts_download_site=artifacts_download_site,
-        default_expand=default_expand,
         artifacts_site=artifacts_site, key=key)
     if event:
         if event["type"] == "SELECT_FILE":
@@ -152,7 +150,9 @@ def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
 
 if _DEVELOP_MODE or os.getenv('SHOW_FILE_BROWSER_DEMO'):
     st.header('Default Options')
-    event = st_file_browser("example_artifacts", key='A')
+    event = st_file_browser("example_artifacts", 
+                            default_expand=True,
+                            key='A')
     st.write(event)
 
     st.header('With Artifacts Server, Allow choose & download')
@@ -172,6 +172,6 @@ if _DEVELOP_MODE or os.getenv('SHOW_FILE_BROWSER_DEMO'):
     st.header('Show only molecule files in sub directory')
     event = st_file_browser("example_artifacts/molecule",
                             artifacts_site="http://localhost:1024/artifacts/molecule/", 
-                            artifacts_download_site="http://localhost:1024/download/artifacts/molecule/", 
+                            artifacts_download_site="http://localhost:1024/download/artifacts/molecule/",
                             show_choose_file=True, show_download_file=True, glob_patterns=('*',), key='D')
     st.write(event)

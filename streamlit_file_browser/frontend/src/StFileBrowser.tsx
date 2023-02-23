@@ -5,18 +5,22 @@ import {
   withStreamlitConnection,
   ComponentProps,
 } from "streamlit-component-lib"
-import FileBrowser, { Icons, FileBrowserFile, FileBrowserFolder } from 'react-keyed-file-browser';
-import Actions from './actions';
-import 'react-keyed-file-browser/dist/react-keyed-file-browser.css';
-import 'font-awesome/css/font-awesome.min.css';
+import FileBrowser, {
+  Icons,
+  FileBrowserFile,
+  FileBrowserFolder,
+} from "react-keyed-file-browser"
+import Actions from "./actions"
+import "react-keyed-file-browser/dist/react-keyed-file-browser.css"
+import "font-awesome/css/font-awesome.min.css"
 
 interface File {
-  name: string;
-  path: string;
-  size: number;
-  create_time: number;
-  update_time: number;
-  access_time: number;
+  name: string
+  path: string
+  size: number
+  create_time: number
+  update_time: number
+  access_time: number
 }
 
 enum StreamlitEventType {
@@ -35,8 +39,8 @@ enum StreamlitEventType {
 }
 
 interface StreamlitEvent {
-  type: StreamlitEventType;
-  target: File | File[];
+  type: StreamlitEventType
+  target: File | File[]
 }
 
 interface State {
@@ -50,12 +54,12 @@ interface IArgs {
   show_download_file: boolean
   show_choose_file: boolean
   ignore_file_select_event: boolean
-  default_expand: boolean
 }
 
-const noticeStreamlit = (event: StreamlitEvent) => Streamlit.setComponentValue(event)
+const noticeStreamlit = (event: StreamlitEvent) =>
+  Streamlit.setComponentValue(event)
 
-const getTimeDiff = (time: number) => (+new Date() - time);
+const getTimeDiff = (time: number) => +new Date() - time
 
 class FileBrowserWrapper extends StreamlitComponentBase<State> {
   private args: IArgs
@@ -66,73 +70,76 @@ class FileBrowserWrapper extends StreamlitComponentBase<State> {
   }
 
   ajustHeight(revoke_step?: number) {
-    const root = document.getElementById('root');
+    const root = document.getElementById("root")
     if (root) {
-      const height = Math.min(root.clientHeight, root.scrollHeight, root.offsetHeight);
-      Streamlit.setFrameHeight(height - (revoke_step ? revoke_step : 0));
-      setTimeout(Streamlit.setFrameHeight, 1);
+      const height = Math.min(
+        root.clientHeight,
+        root.scrollHeight,
+        root.offsetHeight
+      )
+      Streamlit.setFrameHeight(height - (revoke_step ? revoke_step : 0))
+      setTimeout(Streamlit.setFrameHeight, 1)
     }
   }
 
   componentDidMount() {
-    this.ajustHeight();
+    this.ajustHeight()
   }
 
   componentDidUpdate() {
-    this.ajustHeight();
+    this.ajustHeight()
   }
 
-  folderOpenHandler = (opts: FileBrowserFolder) => this.ajustHeight();
-  folderCloseHandler = (opts: FileBrowserFolder) => this.ajustHeight();
+  folderOpenHandler = (opts: FileBrowserFolder) => this.ajustHeight()
+  folderCloseHandler = (opts: FileBrowserFolder) => this.ajustHeight()
 
   fileSelectedHandler = (opts: FileBrowserFile) => {
-    if (!this.args.ignore_file_select_event){
-      const file = this.args.files.find(file => file.path === opts.key)
-      file && noticeStreamlit({ type: StreamlitEventType.SELECT_FILE, target: file });
+    if (!this.args.ignore_file_select_event) {
+      const file = this.args.files.find((file) => file.path === opts.key)
+      file &&
+        noticeStreamlit({ type: StreamlitEventType.SELECT_FILE, target: file })
     }
   }
 
   downlandHandler = (keys: string[]) => {
-    const files = this.args.files.filter(file => keys.includes(file.path))
-    files.forEach(file => {
-      let url = new URL(file.path, this.args.artifacts_download_site).toString();
-      let filename = url.substring(url.lastIndexOf('/')+1);
-      let a = document.createElement('a');
-      a.target = "_blank";
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.parentNode?.removeChild(a);
-    });
-    files.length && noticeStreamlit({ type: StreamlitEventType.DOWNLOAD, target: files });
+    const files = this.args.files.filter((file) => keys.includes(file.path))
+    files.forEach((file) => {
+      let url = new URL(file.path, this.args.artifacts_download_site).toString()
+      let filename = url.substring(url.lastIndexOf("/") + 1)
+      let a = document.createElement("a")
+      a.target = "_blank"
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      a.parentNode?.removeChild(a)
+    })
+    files.length &&
+      noticeStreamlit({ type: StreamlitEventType.DOWNLOAD, target: files })
   }
 
   chooseHandler = (keys: string[]) => {
-    const files = this.args.files.filter(file => keys.includes(file.path))
-    files.length && noticeStreamlit({ type: StreamlitEventType.CHOOSE_FILE, target: files });
+    const files = this.args.files.filter((file) => keys.includes(file.path))
+    files.length &&
+      noticeStreamlit({ type: StreamlitEventType.CHOOSE_FILE, target: files })
   }
 
-  convertFiles = (files: File[]): FileBrowserFile[] => (
-    files.map(file => (
-      {
-        key: file.path,
-        modified: getTimeDiff(file.update_time),
-        size: file.size,
-      }
-    ))
-  )
+  convertFiles = (files: File[]): FileBrowserFile[] =>
+    files.map((file) => ({
+      key: file.path,
+      modified: getTimeDiff(file.update_time),
+      size: file.size,
+    }))
 
   noop = () => <></>
   public render = () => {
-    let that = this;
+    let that = this
     return (
       <div>
         <FileBrowser
           {...this.args}
           showActionBar
           canFilter={true}
-          startOpen={this.args.default_expand}
           detailRenderer={this.noop}
           icons={Icons.FontAwesome(4)}
           files={this.convertFiles(this.args.files)}
@@ -144,12 +151,17 @@ class FileBrowserWrapper extends StreamlitComponentBase<State> {
             return Actions({
               ...args[0],
               ...{
-              canChooseFile: that.args.show_choose_file,
-              canDownloadFile: that.args.show_download_file && that.args.artifacts_download_site,
-              onChooseFile: (keys: string[]) => that.chooseHandler(args[0].selectedItems.map((i: any) => i.key))
-            }})
-            }
-          }
+                canChooseFile: that.args.show_choose_file,
+                canDownloadFile:
+                  that.args.show_download_file &&
+                  that.args.artifacts_download_site,
+                onChooseFile: (keys: string[]) =>
+                  that.chooseHandler(
+                    args[0].selectedItems.map((i: any) => i.key)
+                  ),
+              },
+            })
+          }}
         />
       </div>
     )
