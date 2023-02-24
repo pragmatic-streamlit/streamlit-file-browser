@@ -1,4 +1,6 @@
 import os
+import re
+import os.path
 import pathlib
 from urllib.parse import urljoin
 from html import escape
@@ -117,6 +119,7 @@ def _get_file_info(root, path):
 
 def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
         glob_patterns=('*',), ignore_file_select_event=False,
+        file_ignores=None,
         show_choose_file=False, show_download_file=True, 
         artifacts_site=None, artifacts_download_site=None,
         key=None):
@@ -124,7 +127,11 @@ def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
     files = []
     for glob_pattern in glob_patterns:
         files.extend(list(filter(lambda item: item.is_file(), root.rglob(glob_pattern))))
+
+    for ignore in (file_ignores or []):
+        files = filter(lambda f: (not ignore.match(os.path.basename(f))) if isinstance(ignore, re.Pattern) else (os.path.basename(f) not in file_ignores), files)
     files = [_get_file_info(str(root), str(path)) for path in files]
+    
     if show_preview and show_preview_top:
         with st.expander('', expanded=True):
             preview = st.container()
@@ -151,7 +158,7 @@ def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
 if _DEVELOP_MODE or os.getenv('SHOW_FILE_BROWSER_DEMO'):
     st.header('Default Options')
     event = st_file_browser("example_artifacts", 
-                            default_expand=True,
+                            file_ignores=('a.py', 'a.txt', re.compile('.*.pdb')),
                             key='A')
     st.write(event)
 
