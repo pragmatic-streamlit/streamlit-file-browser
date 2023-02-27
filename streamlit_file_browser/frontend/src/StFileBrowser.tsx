@@ -59,7 +59,6 @@ interface IArgs {
 const noticeStreamlit = (event: StreamlitEvent) =>
   Streamlit.setComponentValue(event)
 
-const getTimeDiff = (time: number) => +new Date() - time
 
 class FileBrowserWrapper extends StreamlitComponentBase<State> {
   private args: IArgs
@@ -127,7 +126,7 @@ class FileBrowserWrapper extends StreamlitComponentBase<State> {
   convertFiles = (files: File[]): FileBrowserFile[] =>
     files.map((file) => ({
       key: file.path,
-      modified: getTimeDiff(file.update_time),
+      modified: file.update_time,
       size: file.size,
     }))
 
