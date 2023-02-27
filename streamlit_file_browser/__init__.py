@@ -2,6 +2,7 @@ import os
 import re
 import os.path
 import pathlib
+from wcmatch import glob
 from urllib.parse import urljoin
 from html import escape
 from base64 import b64encode
@@ -118,16 +119,13 @@ def _get_file_info(root, path):
 
 
 def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
-        glob_patterns=('*',), ignore_file_select_event=False,
+        glob_patterns=('*',), sub_paths=None, ignore_file_select_event=True,
         file_ignores=None,
-        show_choose_file=False, show_download_file=True, 
+        show_choose_file=False, show_download_file=True, limit=10000,
         artifacts_site=None, artifacts_download_site=None,
         key=None):
     root = pathlib.Path(os.path.abspath(path))
-    files = []
-    for glob_pattern in glob_patterns:
-        files.extend(list(filter(lambda item: item.is_file(), root.rglob(glob_pattern))))
-
+    files = [root / f for f in glob.glob(root_dir=path, patterns=glob_patterns, flags=glob.GLOBSTAR | glob.NODIR, limit=limit)]
     for ignore in (file_ignores or []):
         files = filter(lambda f: (not ignore.match(os.path.basename(f))) if isinstance(ignore, re.Pattern) else (os.path.basename(f) not in file_ignores), files)
     files = [_get_file_info(str(root), str(path)) for path in files]
