@@ -110,9 +110,9 @@ def _get_file_info(root, path):
     info = {
         "path": path[len(root)+1:],
         "size": stat.st_size,
-        "create_time": stat.st_ctime,
-        "update_time": stat.st_mtime,
-        "access_time": stat.st_atime,
+        "create_time": stat.st_ctime * 1000,
+        "update_time": stat.st_mtime * 1000,
+        "access_time": stat.st_atime * 1000,
     }
     info['name'] = os.path.basename(path)
     return info
