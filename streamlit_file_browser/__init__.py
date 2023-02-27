@@ -119,7 +119,7 @@ def _get_file_info(root, path):
 
 
 def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
-        glob_patterns=('*',), sub_paths=None, ignore_file_select_event=True,
+        glob_patterns=('*',), ignore_file_select_event=False,
         file_ignores=None,
         show_choose_file=False, show_download_file=True, limit=10000,
         artifacts_site=None, artifacts_download_site=None,
