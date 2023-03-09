@@ -1,0 +1,18 @@
+[
+    {
+        "type": "docking",
+        "config": {
+            "receptor": "docking/3d4z_protein.pdb",
+            "ligand": "docking/3d4z_ligand.sdf"
+        },
+        "title": "3d4z Docking / GT"
+    },
+    {
+        "type": "docking",
+        "config": {
+            "receptor": "docking/3d4z_protein.pdb",
+            "ligand": "docking/3d4z_ligand.sdf"
+        },
+        "title": "3d4z Docking / GT"
+    }
+]
