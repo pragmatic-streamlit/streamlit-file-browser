@@ -169,7 +169,12 @@ def show_complex_preview(config_path, item_height=240, ncolumns=1, key=None):
                     from streamlit_molstar import st_molstar_docking
                     receptor_path = os.path.join(os.path.dirname(config_path), item['config']['receptor'])
                     ligand_path = os.path.join(os.path.dirname(config_path), item['config']['ligand'])
-                    st_molstar_docking(receptor_path, ligand_path, height=item_height, key=f'{key}-{i}-{j}')
+                    if item['config'].get('gtLigand'):
+                        gt_ligand_path = os.path.join(os.path.dirname(config_path), item['config']['gtLigand'])
+                    else:
+                        gt_ligand_path = None
+                    st_molstar_docking(receptor_path, ligand_path, gt_ligand_path=gt_ligand_path,
+                                       height=item_height, key=f'{key}-{i}-{j}')
                 
 
 if _DEVELOP_MODE or os.getenv('SHOW_FILE_BROWSER_DEMO'):
