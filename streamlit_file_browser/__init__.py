@@ -1,5 +1,6 @@
 import os
 import re
+import json
 import os.path
 import pathlib
 from wcmatch import glob
@@ -153,6 +154,23 @@ def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
     return event
 
 
+def show_complex_preview(config_path, item_height=240, ncolumns=1, key=None):
+    with open(config_path) as f:
+        items = json.load(f)
+
+    for i in range(0, len(items), ncolumns):
+        sub_items = items[i:i+ncolumns]
+        for j, (container, item) in enumerate(zip(st.columns(ncolumns), sub_items)):
+            with container:
+                if 'title' in item:
+                    st.caption(item.get('title'))
+                if item.get('type') == 'docking':
+                    from streamlit_molstar import st_molstar_docking
+                    receptor_path = os.path.join(os.path.dirname(config_path), item['config']['receptor'])
+                    ligand_path = os.path.join(os.path.dirname(config_path), item['config']['ligand'])
+                    st_molstar_docking(receptor_path, ligand_path, height=item_height, key=f'{key}-{i}-{j}')
+                
+
 if _DEVELOP_MODE or os.getenv('SHOW_FILE_BROWSER_DEMO'):
     st.header('Default Options')
     event = st_file_browser("example_artifacts", 
@@ -180,3 +198,5 @@ if _DEVELOP_MODE or os.getenv('SHOW_FILE_BROWSER_DEMO'):
                             artifacts_download_site="http://localhost:1024/download/artifacts/molecule/",
                             show_choose_file=True, show_download_file=True, glob_patterns=('*',), key='D')
     st.write(event)
+
+    show_complex_preview('example_artifacts/example_preview.json', ncolumns=2)
