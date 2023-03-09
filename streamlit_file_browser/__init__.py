@@ -12,6 +12,7 @@ from filetype import image_match, video_match, audio_match
 import streamlit as st
 import streamlit.components.v1 as components
 from streamlit_molstar import st_molstar, st_molstar_remote
+from streamlit_antd.table import st_antd_table
 
 
 _DEVELOP_MODE = os.getenv('DEVELOP_MODE')
@@ -60,7 +61,7 @@ def _do_molecule_preview(root, file_path, url):
 def _do_csv_preview(root, file_path, url):
     abs_path = os.path.join(root, file_path)
     import pandas as pd
-    st.dataframe(pd.read_csv(abs_path))
+    st_antd_table(pd.read_csv(abs_path))
 
 def _do_json_preview(root, file_path, url):
     abs_path = os.path.join(root, file_path)
@@ -120,7 +121,7 @@ def _get_file_info(root, path):
 
 
 def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
-        glob_patterns=('*',), ignore_file_select_event=False,
+        glob_patterns=('**/*',), ignore_file_select_event=False,
         file_ignores=None,
         show_choose_file=False, show_download_file=True, limit=10000,
         artifacts_site=None, artifacts_download_site=None,

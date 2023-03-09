@@ -17,7 +17,8 @@ setuptools.setup(
         "pandas",
         "filetype",
         "wcmatch",
-        "streamlit_molstar",
+        "streamlit-molstar",
+        "streamlit-antd",
         "streamlit >= 0.63",
     ],
 )
