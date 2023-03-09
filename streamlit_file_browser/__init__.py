@@ -173,7 +173,7 @@ def show_complex_preview(config_path, item_height=240, ncolumns=1, key=None):
                         gt_ligand_path = os.path.join(os.path.dirname(config_path), item['config']['gtLigand'])
                     else:
                         gt_ligand_path = None
-                    st_molstar_docking(receptor_path, ligand_path, gt_ligand_path=gt_ligand_path,
+                    st_molstar_docking(receptor_path, ligand_path, gt_ligand_file_path=gt_ligand_path,
                                        height=item_height, key=f'{key}-{i}-{j}')
                 
 
