@@ -123,8 +123,8 @@ def _get_file_info(root, path):
 def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
         glob_patterns=('**/*',), ignore_file_select_event=False,
         file_ignores=None,
-        show_choose_file=False, show_download_file=True, limit=10000,
-        artifacts_site=None, artifacts_download_site=None,
+        show_choose_file=False, show_download_file=True, show_delete_file=True,
+        limit=10000, artifacts_site=None, artifacts_download_site=None,
         key=None):
     root = pathlib.Path(os.path.abspath(path))
     files = [root / f for f in glob.glob(root_dir=path, patterns=glob_patterns, flags=glob.GLOBSTAR | glob.NODIR, limit=limit)]
@@ -140,6 +140,7 @@ def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
     event = _component_func(files=files,
         show_choose_file=show_choose_file,
         show_download_file=show_download_file,
+        show_delete_file=show_delete_file,
         ignore_file_select_event=ignore_file_select_event,
         artifacts_download_site=artifacts_download_site,
         artifacts_site=artifacts_site, key=key)
@@ -179,7 +180,7 @@ def show_complex_preview(config_path, item_height=240, ncolumns=1, key=None):
 
 if _DEVELOP_MODE or os.getenv('SHOW_FILE_BROWSER_DEMO'):
     st.header('Default Options')
-    event = st_file_browser("example_artifacts", 
+    event = st_file_browser("example_artifacts",
                             file_ignores=('a.py', 'a.txt', re.compile('.*.pdb')),
                             key='A')
     st.write(event)
