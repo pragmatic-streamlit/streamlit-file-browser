@@ -123,13 +123,16 @@ def _get_file_info(root, path):
 def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
         glob_patterns=('**/*',), ignore_file_select_event=False,
         file_ignores=None,
+        extentions=None,
         show_choose_file=False, show_download_file=True, limit=10000,
         artifacts_site=None, artifacts_download_site=None,
         key=None):
+    extentions = tuple(extentions) if extentions else None
     root = pathlib.Path(os.path.abspath(path))
     files = [root / f for f in glob.glob(root_dir=path, patterns=glob_patterns, flags=glob.GLOBSTAR | glob.NODIR, limit=limit)]
     for ignore in (file_ignores or []):
         files = filter(lambda f: (not ignore.match(os.path.basename(f))) if isinstance(ignore, re.Pattern) else (os.path.basename(f) not in file_ignores), files)
+    files = [path for path in files if str(path).endswith(extentions)] if extentions else files
     files = [_get_file_info(str(root), str(path)) for path in files]
     
     if show_preview and show_preview_top:
