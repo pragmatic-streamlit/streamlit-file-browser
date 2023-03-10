@@ -123,20 +123,21 @@ const Actions = (props) => {
             </a>
           </li>
         )
-      } else if (!itemsWithoutKeyDerived && isFolder && canDeleteFolder) {
-        actions.push(
-          <li key="action-delete">
-            <a
-              onClick={onDeleteFolder}
-              href="#"
-              role="button"
-            >
-              {icons.Delete}
-              &nbsp;Delete
-            </a>
-          </li>
-        )
       }
+      // else if (!itemsWithoutKeyDerived && isFolder && canDeleteFolder) {
+      //   actions.push(
+      //     <li key="action-delete">
+      //       <a
+      //         onClick={onDeleteFolder}
+      //         href="#"
+      //         role="button"
+      //       >
+      //         {icons.Delete}
+      //         &nbsp;Delete
+      //       </a>
+      //     </li>
+      //   )
+      // }
 
       if ((!isFolder && canDownloadFile) || (isFolder && canDownloadFolder)) {
         actions.push(
