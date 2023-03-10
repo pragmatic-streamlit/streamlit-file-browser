@@ -8,6 +8,7 @@
     "@types/react": "^16.9.0",
     "@types/react-dom": "^16.9.0",
     "font-awesome": "^4.7.0",
+    "prop-types": "^15.8.1",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-keyed-file-browser": "^1.14.0",

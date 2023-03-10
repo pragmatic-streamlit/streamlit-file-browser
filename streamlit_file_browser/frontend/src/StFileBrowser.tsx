@@ -52,13 +52,13 @@ interface IArgs {
   files: File[]
   artifacts_download_site: string
   show_download_file: boolean
+  show_delete_file: boolean
   show_choose_file: boolean
   ignore_file_select_event: boolean
 }
 
 const noticeStreamlit = (event: StreamlitEvent) =>
   Streamlit.setComponentValue(event)
-
 
 class FileBrowserWrapper extends StreamlitComponentBase<State> {
   private args: IArgs
@@ -117,6 +117,17 @@ class FileBrowserWrapper extends StreamlitComponentBase<State> {
       noticeStreamlit({ type: StreamlitEventType.DOWNLOAD, target: files })
   }
 
+  deleteFileHandler = (fileKey: string | string[]) => {
+    const files = this.args.files.filter((file) => typeof fileKey === 'string' ? fileKey === file.path : fileKey.includes(file.path))
+    console.log("deleteFileHandler", "key", fileKey, "files ", files)
+
+    files.length &&
+      noticeStreamlit({ type: StreamlitEventType.DELETE_FILE, target: files })
+
+    const remainingFiles = this.args.files.filter((file) => typeof fileKey === 'string' ? fileKey !== file.path : !fileKey.includes(file.path))
+    this.args.files = remainingFiles
+  }
+
   chooseHandler = (keys: string[]) => {
     const files = this.args.files.filter((file) => keys.includes(file.path))
     files.length &&
@@ -146,6 +157,7 @@ class FileBrowserWrapper extends StreamlitComponentBase<State> {
           onFolderClose={this.folderCloseHandler}
           onSelect={this.fileSelectedHandler}
           onDownloadFile={this.downlandHandler}
+          onDeleteFile={this.deleteFileHandler}
           actionRenderer={(...args: any) => {
             return Actions({
               ...args[0],
@@ -154,9 +166,14 @@ class FileBrowserWrapper extends StreamlitComponentBase<State> {
                 canDownloadFile:
                   that.args.show_download_file &&
                   that.args.artifacts_download_site,
+                canDeleteFile: that.args.show_delete_file,
                 onChooseFile: (keys: string[]) =>
                   that.chooseHandler(
                     args[0].selectedItems.map((i: any) => i.key)
+                  ),
+                onDeleteFile: (fileKey: string[]) =>
+                  that.deleteFileHandler(
+                      args[0].selectedItems.map((i: any) => i.key)
                   ),
               },
             })
