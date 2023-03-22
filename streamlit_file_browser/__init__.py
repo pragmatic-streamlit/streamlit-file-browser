@@ -77,7 +77,7 @@ def _do_plain_preview(root, file_path, url):
 PREVIEW_HANDLERS = {
     extention: handler 
     for extentions, handler in [
-        (('.pdb', '.pdbqt', '.sdf', '.cif', '.mol', '.mol2', '.xyz'), _do_molecule_preview),
+        (('.pdb', '.pdbqt', '.ent', '.trr', '.nctraj', '.nc', '.ply', '.bcif', '.sdf', '.cif', '.mol', '.mol2', '.xyz', '.sd', '.gro'), _do_molecule_preview),
         (('.json',), _do_json_preview),
         (('.pdf',), _do_pdf_preview),
         (('.csv',), _do_csv_preview),
