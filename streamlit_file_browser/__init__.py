@@ -13,7 +13,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 from streamlit_molstar import st_molstar, st_molstar_remote
 from streamlit_antd.table import st_antd_table
-
+from streamlit_embeded import st_embeded
 
 _DEVELOP_MODE = os.getenv('DEVELOP_MODE')
 # _DEVELOP_MODE = True
@@ -68,6 +68,12 @@ def _do_json_preview(root, file_path, url):
     with open(abs_path) as f:
         st.json(f.read())
 
+def _do_html_preview(root, file_path, url):
+    abs_path = os.path.join(root, file_path)
+    with open(abs_path) as f:
+        # st.json(f.read())
+        st_embeded(f.read())
+
 def _do_plain_preview(root, file_path, url):
     abs_path = os.path.join(root, file_path)
     with open(abs_path) as f:
@@ -82,7 +88,8 @@ PREVIEW_HANDLERS = {
         (('.pdf',), _do_pdf_preview),
         (('.csv',), _do_csv_preview),
         (('.log', '.txt', '.md'), _do_plain_preview),
-        (('.py', '.sh'), _do_code_preview)
+        (('.py', '.sh'), _do_code_preview),
+        (('.html', '.htm'), _do_html_preview)
     ]
     for extention in extentions
 }
@@ -171,7 +178,7 @@ def show_complex_preview(config_path, item_height=240, ncolumns=1, key=None):
                 if 'title' in item:
                     st.caption(item.get('title'))
                 if item.get('type') == 'docking':
-                    from streamlit_molstar import st_molstar_docking
+                    from streamlit_molstar.docking import st_molstar_docking
                     receptor_path = os.path.join(os.path.dirname(config_path), item['config']['receptor'])
                     ligand_path = os.path.join(os.path.dirname(config_path), item['config']['ligand'])
                     if item['config'].get('gtLigand'):
