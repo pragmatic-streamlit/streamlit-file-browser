@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="streamlit-file-browser",
-    version="2.4.0",
+    version="2.4.1",
     author="",
     author_email="",
     description="",
@@ -21,5 +21,6 @@ setuptools.setup(
         "streamlit-antd",
         "streamlit-embeded",
         "streamlit >= 0.63",
+        "pymatgen",
     ],
 )
