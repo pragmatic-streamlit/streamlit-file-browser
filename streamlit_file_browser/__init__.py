@@ -15,7 +15,7 @@ from streamlit_molstar import st_molstar, st_molstar_remote
 from streamlit_antd.table import st_antd_table
 from streamlit_embeded import st_embeded
 
-_DEVELOP_MODE = os.getenv('DEVELOP_MODE')
+_DEVELOP_MODE = os.getenv('DEVELOP_MODE') or os.getenv('FILE_BROWSER_DEVELOP_MODE')
 # _DEVELOP_MODE = True
 
 if _DEVELOP_MODE:
@@ -96,14 +96,30 @@ PREVIEW_HANDLERS = {
 
 
 def _show_file_preview(root, selected_file, artifacts_site):
-    abs_path = os.path.join(root, selected_file["path"])
-    ext = os.path.splitext(selected_file["name"])[1]
+    target_path = selected_file["path"]
+    abs_path = os.path.join(root, target_path)
+    basename = os.path.basename(target_path)
+    
+    preview_raw = False
+    if basename in ('POSCAR', 'CONTCAR', 'POSCAR.txt', 'CONTCAR.txt'):
+        basename = f'{basename}.cif'
+        target_path = os.path.join(os.path.dirname(target_path), basename)
+        abs_target_path = os.path.join(root, target_path)
+        if not os.path.exists(abs_target_path):
+            from pymatgen.core import Structure
+            structure = Structure.from_file(abs_path)
+            structure.make_supercell(scaling_matrix=[3, 3, 3], to_unit_cell=False)
+            structure.to(filename=abs_target_path)
+        st.caption('scaling_matrix=[3, 3, 3]')
+        preview_raw = True
+
+    ext = os.path.splitext(target_path)[1]
     if ext in PREVIEW_HANDLERS:
         try:
-            url = urljoin(artifacts_site, selected_file["path"]) if artifacts_site else None
-            PREVIEW_HANDLERS[ext](root, selected_file["path"], url)
+            url = urljoin(artifacts_site, target_path) if artifacts_site else None
+            PREVIEW_HANDLERS[ext](root, target_path, url)
         except Exception as e:
-            st.error(f'failed preview {selected_file["path"]}')
+            st.error(f'failed preview {target_path}')
             st.exception(e)
     elif ft := image_match(abs_path):
         st.image(abs_path)
@@ -113,6 +129,9 @@ def _show_file_preview(root, selected_file, artifacts_site):
         st.audio(abs_path, format=ft.mime)
     else:
         st.info(f"No preview aviable for {ext}")
+    if preview_raw:
+        with open(abs_path) as f:
+            st.text(f.read())
 
 def _get_file_info(root, path):
     stat = os.stat(path)
