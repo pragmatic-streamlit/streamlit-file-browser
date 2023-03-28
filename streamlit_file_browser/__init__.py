@@ -127,6 +127,9 @@ def _show_file_preview(root, selected_file, artifacts_site):
         st.video(abs_path, format=ft.mime)
     elif ft := audio_match(abs_path):
         st.audio(abs_path, format=ft.mime)
+    elif basename in ('STDOUTERR',):
+        with open(abs_path) as f:
+            st.text(f.read())
     else:
         st.info(f"No preview aviable for {ext}")
     if preview_raw:
