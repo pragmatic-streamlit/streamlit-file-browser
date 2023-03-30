@@ -16,7 +16,7 @@ from streamlit_antd.table import st_antd_table
 from streamlit_embeded import st_embeded
 
 _DEVELOP_MODE = os.getenv('DEVELOP_MODE') or os.getenv('FILE_BROWSER_DEVELOP_MODE')
-# _DEVELOP_MODE = True
+
 
 if _DEVELOP_MODE:
     _component_func = components.declare_component(
@@ -71,7 +71,6 @@ def _do_json_preview(root, file_path, url):
 def _do_html_preview(root, file_path, url):
     abs_path = os.path.join(root, file_path)
     with open(abs_path) as f:
-        # st.json(f.read())
         st_embeded(f.read())
 
 def _do_plain_preview(root, file_path, url):
@@ -95,7 +94,7 @@ PREVIEW_HANDLERS = {
 }
 
 
-def _show_file_preview(root, selected_file, artifacts_site):
+def show_file_preview(root, selected_file, artifacts_site):
     target_path = selected_file["path"]
     abs_path = os.path.join(root, target_path)
     basename = os.path.basename(target_path)
@@ -152,6 +151,7 @@ def _get_file_info(root, path):
 def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
         glob_patterns=('**/*',), ignore_file_select_event=False,
         file_ignores=None,
+        select_filetype_ignores=None,
         extentions=None,
         show_delete_file=False,
         show_choose_file=False, show_download_file=True, limit=10000,
@@ -178,37 +178,15 @@ def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
         artifacts_download_site=artifacts_download_site,
         artifacts_site=artifacts_site, key=key)
     if event:
-        if event["type"] == "SELECT_FILE":
+        if event["type"] == "SELECT_FILE" and ((not select_filetype_ignores) or all(not event["target"]['path'].endswith(ft) for ft in select_filetype_ignores)):
             file = event["target"]
             if show_preview and show_preview_top:
                 with preview:
-                    _show_file_preview(file, artifacts_site)
+                    show_file_preview(file, artifacts_site)
             elif show_preview and not show_preview_top:
                 with st.expander('', expanded=True):
-                    _show_file_preview(str(root), file, artifacts_site)
+                    show_file_preview(str(root), file, artifacts_site)
     return event
-
-
-def show_complex_preview(config_path, item_height=240, ncolumns=1, key=None):
-    with open(config_path) as f:
-        items = json.load(f)
-
-    for i in range(0, len(items), ncolumns):
-        sub_items = items[i:i+ncolumns]
-        for j, (container, item) in enumerate(zip(st.columns(ncolumns), sub_items)):
-            with container:
-                if 'title' in item:
-                    st.caption(item.get('title'))
-                if item.get('type') == 'docking':
-                    from streamlit_molstar.docking import st_molstar_docking
-                    receptor_path = os.path.join(os.path.dirname(config_path), item['config']['receptor'])
-                    ligand_path = os.path.join(os.path.dirname(config_path), item['config']['ligand'])
-                    if item['config'].get('gtLigand'):
-                        gt_ligand_path = os.path.join(os.path.dirname(config_path), item['config']['gtLigand'])
-                    else:
-                        gt_ligand_path = None
-                    st_molstar_docking(receptor_path, ligand_path, gt_ligand_file_path=gt_ligand_path,
-                                       height=item_height, key=f'{key}-{i}-{j}')
                 
 
 if _DEVELOP_MODE or os.getenv('SHOW_FILE_BROWSER_DEMO'):
@@ -238,5 +216,3 @@ if _DEVELOP_MODE or os.getenv('SHOW_FILE_BROWSER_DEMO'):
                             artifacts_download_site="http://localhost:1024/download/artifacts/molecule/",
                             show_choose_file=True, show_download_file=True, glob_patterns=('*',), key='D')
     st.write(event)
-
-    show_complex_preview('example_artifacts/example_preview.json', ncolumns=2)
