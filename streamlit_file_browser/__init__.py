@@ -178,7 +178,7 @@ def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
         artifacts_download_site=artifacts_download_site,
         artifacts_site=artifacts_site, key=key)
     if event:
-        if event["type"] == "SELECT_FILE" and ((not select_filetype_ignores) or any(event["target"]['path'].endswith(ft) for ft in select_filetype_ignores)):
+        if event["type"] == "SELECT_FILE" and ((not select_filetype_ignores) or (not any(event["target"]['path'].endswith(ft) for ft in select_filetype_ignores))):
             file = event["target"]
             if show_preview and show_preview_top:
                 with preview:
