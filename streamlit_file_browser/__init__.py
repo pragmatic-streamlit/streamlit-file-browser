@@ -154,9 +154,10 @@ def ensure_tree_cache(
         glob_patterns=('**/*',),
         file_ignores=None,
         limit=10000,
-        use_cache: bool = False):
+        use_cache: bool = False,
+        force_rebuild: bool = False):
     cache_path = os.path.join(path, CACHE_FILE_NAME)
-    if use_cache and os.path.exists(cache_path):
+    if use_cache and not force_rebuild and os.path.exists(cache_path):
         with open(cache_path, 'r') as cache_file:
             files = json.load(cache_file)
             return files
