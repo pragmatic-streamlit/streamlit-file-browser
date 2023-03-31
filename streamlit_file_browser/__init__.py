@@ -154,9 +154,9 @@ def ensure_tree_cache(
         glob_patterns=('**/*',),
         file_ignores=None,
         limit=10000,
-        force_gen: bool = False):
+        user_cache: bool = False):
     cache_path = os.path.join(path, CACHE_FILE_NAME)
-    if not force_gen and os.path.exists(cache_path):
+    if user_cache and os.path.exists(cache_path):
         with open(cache_path, 'r') as cache_file:
             files = json.load(cache_file)
             return files
@@ -169,8 +169,9 @@ def ensure_tree_cache(
                     os.path.basename(f) not in file_ignores), files)
     files = [_get_file_info(str(root), str(path)) for path in files]
 
-    with open(cache_path, 'w+') as cache_file:
-        json.dump(files, cache_file)
+    if user_cache:
+        with open(cache_path, 'w+') as cache_file:
+            json.dump(files, cache_file)
 
     return files
 
@@ -189,7 +190,7 @@ def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
     extentions = tuple(extentions) if extentions else None
 
     root = pathlib.Path(os.path.abspath(path))
-    files = ensure_tree_cache(path, glob_patterns, file_ignores, limit, force_gen=not use_cache)
+    files = ensure_tree_cache(path, glob_patterns, file_ignores, limit, user_cache=use_cache)
 
     files = [file for file in files if str(file["path"]).endswith(extentions)] if extentions else files
 
