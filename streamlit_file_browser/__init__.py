@@ -30,6 +30,34 @@ else:
     _component_func = components.declare_component("streamlit_file_browser", path=build_dir)
 
 
+def render_static_file_server(
+    key,
+    path: str,
+    static_file_server_path: str,
+    show_choose_file: bool = False,
+    show_download_file: bool = False,
+    show_delete_file: bool = False,
+    show_new_folder: bool = False,
+    show_upload_file: bool = False,
+    ignore_file_select_event: bool = False,
+):
+    if not static_file_server_path:
+        print("static_file_server_path is required")
+        return None
+    event = _component_func(
+        files=None,
+        path=path,
+        static_file_server_path=static_file_server_path,
+        show_choose_file=show_choose_file,
+        show_download_file=show_download_file,
+        show_delete_file=show_delete_file,
+        show_new_folder=show_new_folder,
+        show_upload_file=show_upload_file,
+        ignore_file_select_event=ignore_file_select_event,
+        key=key,
+    )
+    return event
+
 def _do_code_preview(root, file_path, url):
     abs_path = os.path.join(root, file_path)
     with open(abs_path) as f:
@@ -184,32 +212,57 @@ def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
         extentions=None,
         show_delete_file=False,
         show_choose_file=False, show_download_file=True,
+        show_new_folder=False, show_upload_file=False,
         limit=10000,
         artifacts_site=None, artifacts_download_site=None,
         key=None,
-        use_cache=False):
+        use_cache=False,
+        use_static_file_server=False,
+        static_file_server_path=None,):
     extentions = tuple(extentions) if extentions else None
-
     root = pathlib.Path(os.path.abspath(path))
-    files = ensure_tree_cache(path, glob_patterns, file_ignores, limit, use_cache=use_cache)
+    files = []
+    event = None
+    if use_static_file_server and static_file_server_path:
+        event = render_static_file_server(
+            key,
+            path,
+            static_file_server_path,
+            show_choose_file,
+            show_download_file,
+            show_delete_file,
+            show_new_folder,
+            show_upload_file,
+        )
+    else:
+        files = ensure_tree_cache(
+            path,
+            glob_patterns,
+            file_ignores,
+            limit,
+            use_cache=use_cache,
+        )
 
-    files = [file for file in files if str(file["path"]).endswith(extentions)] if extentions else files
-
-    if show_preview and show_preview_top:
-        with st.expander('', expanded=True):
-            preview = st.container()
-    if not artifacts_download_site and artifacts_site:
-        artifacts_download_site = artifacts_site
-    event = _component_func(files=files,
-        show_choose_file=show_choose_file,
-        show_download_file=show_download_file,
-        show_delete_file=show_delete_file,
-        ignore_file_select_event=ignore_file_select_event,
-        artifacts_download_site=artifacts_download_site,
-        artifacts_site=artifacts_site, key=key)
+        files = [file for file in files if str(file["path"]).endswith(extentions)] if extentions else files
+        if show_preview and show_preview_top:
+            with st.expander('', expanded=True):
+                preview = st.container()
+        if not artifacts_download_site and artifacts_site:
+            artifacts_download_site = artifacts_site
+        event = _component_func(files=files,
+            show_choose_file=show_choose_file,
+            show_download_file=show_download_file,
+            show_delete_file=show_delete_file,
+            ignore_file_select_event=ignore_file_select_event,
+            artifacts_download_site=artifacts_download_site,
+            artifacts_site=artifacts_site, key=key)
     if event:
         if event["type"] == "SELECT_FILE" and ((not select_filetype_ignores) or (not any(event["target"]['path'].endswith(ft) for ft in select_filetype_ignores))):
             file = event["target"]
+            if "path" in file:
+                if not os.path.exists(os.path.join(root, file["path"])):
+                    st.warning(f"File {file['path']} not found")
+                    return event
             if show_preview and show_preview_top:
                 with preview:
                     show_file_preview(file, artifacts_site)
@@ -220,6 +273,29 @@ def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
                 
 
 if _DEVELOP_MODE or os.getenv('SHOW_FILE_BROWSER_DEMO'):
+    
+    import time
+
+    st.header('Deep glob')
+    start_time = time.time()
+    # If you use the static file server, you must make sure
+    # that the path listened to by the static file server
+    # is the same as the path passed to st_file_browser by root.
+    event = st_file_browser("../example_artifacts/static_file_server/root",
+        key="deep",
+        use_static_file_server=True,
+        show_choose_file=True,
+        show_delete_file=True,
+        show_download_file=False,
+        show_new_folder=True,
+        show_upload_file=False,
+        static_file_server_path="http://localhost:9999/",
+    )
+    end_time = time.time()
+    execution_time = end_time - start_time
+    st.write(f"代码段执行时间: {execution_time:.6f} 秒")
+    st.write(event)
+    
     st.header('Default Options')
     event = st_file_browser("example_artifacts",
                             file_ignores=('a.py', 'a.txt', re.compile('.*.pdb')),

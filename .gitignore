@@ -69,3 +69,6 @@ package-lock.json
 
 
 streamlit-file-browser-*
+
+example_artifacts/static_file_server/var
+example_artifacts/static_file_server/root

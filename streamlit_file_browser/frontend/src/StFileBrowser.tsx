@@ -10,6 +10,8 @@ import FileBrowser, {
   FileBrowserFile,
   FileBrowserFolder,
 } from "react-keyed-file-browser"
+
+import IframeResizer from 'iframe-resizer-react'
 import Actions from "./actions"
 import "react-keyed-file-browser/dist/react-keyed-file-browser.css"
 import "font-awesome/css/font-awesome.min.css"
@@ -50,17 +52,109 @@ interface State {
 
 interface IArgs {
   files: File[]
+  path: string
   artifacts_download_site: string
   show_download_file: boolean
   show_delete_file: boolean
   show_choose_file: boolean
+  show_new_folder: boolean
+  show_upload_file: boolean
   ignore_file_select_event: boolean
+  static_file_server_path: string
 }
+
+const AccessUpload = 0b10000000
+const AccessDelete = 0b01000000
+const AccessFolder = 0b00100000
+const AccessDownload = 0b00010000
 
 const noticeStreamlit = (event: StreamlitEvent) =>
   Streamlit.setComponentValue(event)
 
-class FileBrowserWrapper extends StreamlitComponentBase<State> {
+class FileBrowserStaticServer extends StreamlitComponentBase<State> {
+  private args: IArgs
+  private access: number
+  
+  constructor(props: ComponentProps) {
+    super(props)
+    this.args = props.args
+    this.access = this.getAccess()
+  }
+
+  getAccess = (): number => {
+    const { show_new_folder, show_upload_file, show_delete_file, show_download_file } = this.args;
+    let access = 0
+    show_new_folder && (access |= AccessFolder)
+    show_upload_file && (access |= AccessUpload)
+    show_delete_file && (access |= AccessDelete)
+    show_download_file && (access |= AccessDownload)
+    return access
+  }
+
+  ajustHeight(revoke_step?: number) {
+    Streamlit.setFrameHeight()
+  }
+  
+  componentDidMount(): void {
+    const root = this.args.path
+    const args = this.args;
+    window.addEventListener('message', function(event) {
+      // console.log('从 iframe 中传递过来的点击事件:', event.data);
+      if (
+        event.data?.event === "filebrowser_file_selected" ||
+        event.data?.event === "filebrowser_dir_selected" ||
+        event.data?.event === "filebrowser_file_double_selected"
+      ) {
+        const file: File = {
+          name: event.data?.data?.file?.name,
+          path: `${event.data?.data?.file?.path}`,
+          size: event.data?.data?.file?.size,
+          create_time: event.data?.data?.file?.create_time,
+          update_time: event.data?.data?.file?.update_time,
+          access_time: event.data?.data?.file?.access_time,
+        }
+        event.data?.event === "filebrowser_file_selected" && noticeStreamlit({ type: StreamlitEventType.SELECT_FILE, target: file })
+        event.data?.event === "filebrowser_dir_selected" && noticeStreamlit({ type: StreamlitEventType.SELECT_FOLDER, target: file })
+        const { show_choose_file } = args;
+        event.data?.event === "filebrowser_file_double_selected" && show_choose_file && noticeStreamlit({ type: StreamlitEventType.CHOOSE_FILE, target: file })
+      }
+    });
+    this.ajustHeight()
+  }
+
+  componentDidUpdate() {
+    this.ajustHeight()
+  }
+
+  onResized = (size: any) => {
+    this.ajustHeight()
+  }
+
+  getCurrentPath = () => {
+    const root = this.args.static_file_server_path;
+    if (root.includes("&")) {
+      return `${root}&access=${this.access}`;
+    }
+    return `${root}?access=${this.access}`;
+  }
+
+  public render = () => {
+    return (
+      <IframeResizer
+        {...this.args}
+        checkOrigin={false}
+        autoResize
+        onResized={this.onResized}
+        frameBorder={0}
+        style={{ width: '100%' }}
+        src={this.getCurrentPath()}
+      />
+    )
+
+  }
+}
+  
+class FileBrowserNative extends StreamlitComponentBase<State> {
   private args: IArgs
 
   constructor(props: ComponentProps) {
@@ -181,6 +275,33 @@ class FileBrowserWrapper extends StreamlitComponentBase<State> {
         />
       </div>
     )
+  }
+}
+const StreamlitFileBrowserNative = withStreamlitConnection(FileBrowserNative)
+const StreamlitFileBrowserStaticServer = withStreamlitConnection(FileBrowserStaticServer)
+
+class FileBrowserWrapper extends StreamlitComponentBase<State> {
+  private args: IArgs
+  
+  constructor(props: ComponentProps) {
+    super(props)
+    this.args = props.args
+  }
+
+  public render(): React.ReactNode {
+    if (this.args.static_file_server_path) {
+      return (
+        <div>
+          <StreamlitFileBrowserStaticServer {...this.props} />
+        </div>
+      )
+    } else {
+      return (
+        <div>
+          <StreamlitFileBrowserNative {...this.props} />
+        </div>
+      )
+    }
   }
 }
 
