@@ -63,32 +63,15 @@ interface IArgs {
   static_file_server_path: string
 }
 
-const AccessUpload = 0b10000000
-const AccessDelete = 0b01000000
-const AccessFolder = 0b00100000
-const AccessDownload = 0b00010000
-
 const noticeStreamlit = (event: StreamlitEvent) =>
   Streamlit.setComponentValue(event)
 
 class FileBrowserStaticServer extends StreamlitComponentBase<State> {
   private args: IArgs
-  private access: number
   
   constructor(props: ComponentProps) {
     super(props)
     this.args = props.args
-    this.access = this.getAccess()
-  }
-
-  getAccess = (): number => {
-    const { show_new_folder, show_upload_file, show_delete_file, show_download_file } = this.args;
-    let access = 0
-    show_new_folder && (access |= AccessFolder)
-    show_upload_file && (access |= AccessUpload)
-    show_delete_file && (access |= AccessDelete)
-    show_download_file && (access |= AccessDownload)
-    return access
   }
 
   ajustHeight(revoke_step?: number) {
@@ -103,7 +86,8 @@ class FileBrowserStaticServer extends StreamlitComponentBase<State> {
       if (
         event.data?.event === "filebrowser_file_selected" ||
         event.data?.event === "filebrowser_dir_selected" ||
-        event.data?.event === "filebrowser_file_double_selected"
+        event.data?.event === "filebrowser_file_double_selected" ||
+        event.data?.event === "filebrowser_path_changed"
       ) {
         const file: File = {
           name: event.data?.data?.file?.name,
@@ -116,7 +100,8 @@ class FileBrowserStaticServer extends StreamlitComponentBase<State> {
         event.data?.event === "filebrowser_file_selected" && noticeStreamlit({ type: StreamlitEventType.SELECT_FILE, target: file })
         event.data?.event === "filebrowser_dir_selected" && noticeStreamlit({ type: StreamlitEventType.SELECT_FOLDER, target: file })
         const { show_choose_file } = args;
-        event.data?.event === "filebrowser_file_double_selected" && show_choose_file && noticeStreamlit({ type: StreamlitEventType.CHOOSE_FILE, target: file })
+        event.data?.event === "filebrowser_file_double_selected" && show_choose_file && noticeStreamlit({ type: StreamlitEventType.CHOOSE_FILE, target: [file] })
+        event.data?.event === "filebrowser_path_changed" && noticeStreamlit({ type: StreamlitEventType.SELECT_FOLDER, target: file })
       }
     });
     this.ajustHeight()
@@ -130,14 +115,6 @@ class FileBrowserStaticServer extends StreamlitComponentBase<State> {
     this.ajustHeight()
   }
 
-  getCurrentPath = () => {
-    const root = this.args.static_file_server_path;
-    if (root.includes("&")) {
-      return `${root}&access=${this.access}`;
-    }
-    return `${root}?access=${this.access}`;
-  }
-
   public render = () => {
     return (
       <IframeResizer
@@ -147,7 +124,7 @@ class FileBrowserStaticServer extends StreamlitComponentBase<State> {
         onResized={this.onResized}
         frameBorder={0}
         style={{ width: '100%' }}
-        src={this.getCurrentPath()}
+        src={this.args.static_file_server_path}
       />
     )
 
