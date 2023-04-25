@@ -90,7 +90,12 @@ def _do_molecule_preview(root, file_path, url):
 def _do_csv_preview(root, file_path, url):
     abs_path = os.path.join(root, file_path)
     import pandas as pd
-    st_antd_table(pd.read_csv(abs_path))
+
+    df = pd.read_csv(abs_path)
+    mask = df.applymap(type) != bool
+    d = {True: 'True', False: 'False'}
+    df = df.where(mask, df.replace(d))
+    st_antd_table(df)
 
 def _do_json_preview(root, file_path, url):
     abs_path = os.path.join(root, file_path)
@@ -221,8 +226,6 @@ def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
         static_file_server_path=None,):
     extentions = tuple(extentions) if extentions else None
     root = pathlib.Path(os.path.abspath(path))
-    files = []
-    event = None
     if use_static_file_server and static_file_server_path:
         event = render_static_file_server(
             key,
