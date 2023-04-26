@@ -87,7 +87,8 @@ class FileBrowserStaticServer extends StreamlitComponentBase<State> {
         event.data?.event === "filebrowser_file_selected" ||
         event.data?.event === "filebrowser_dir_selected" ||
         event.data?.event === "filebrowser_file_double_selected" ||
-        event.data?.event === "filebrowser_path_changed"
+        event.data?.event === "filebrowser_path_changed" ||
+        event.data?.event === "filebrowser_file_choose"
       ) {
         const file: File = {
           name: event.data?.data?.file?.name,
@@ -101,6 +102,7 @@ class FileBrowserStaticServer extends StreamlitComponentBase<State> {
         event.data?.event === "filebrowser_dir_selected" && noticeStreamlit({ type: StreamlitEventType.SELECT_FOLDER, target: file })
         const { show_choose_file } = args;
         event.data?.event === "filebrowser_file_double_selected" && show_choose_file && noticeStreamlit({ type: StreamlitEventType.CHOOSE_FILE, target: [file] })
+        event.data?.event === "filebrowser_file_choose" && show_choose_file && noticeStreamlit({ type: StreamlitEventType.CHOOSE_FILE, target: [file] })
         event.data?.event === "filebrowser_path_changed" && noticeStreamlit({ type: StreamlitEventType.SELECT_FOLDER, target: file })
       }
     });

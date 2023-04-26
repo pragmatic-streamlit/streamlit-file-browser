@@ -292,8 +292,9 @@ if _DEVELOP_MODE or os.getenv('SHOW_FILE_BROWSER_DEMO'):
         show_download_file=False,
         show_new_folder=True,
         show_upload_file=False,
-        static_file_server_path="http://localhost:9999/",
+        static_file_server_path="http://localhost:9999/?choose=true",
     )
+    print(event)
     end_time = time.time()
     execution_time = end_time - start_time
     st.write(f"代码段执行时间: {execution_time:.6f} 秒")
