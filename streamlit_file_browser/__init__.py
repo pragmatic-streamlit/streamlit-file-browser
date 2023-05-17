@@ -112,7 +112,6 @@ def _do_plain_preview(root, file_path, url):
     with open(abs_path) as f:
         st.text(f.read())
 
-
 PREVIEW_HANDLERS = {
     extention: handler 
     for extentions, handler in [
@@ -120,7 +119,7 @@ PREVIEW_HANDLERS = {
         (('.json',), _do_json_preview),
         (('.pdf',), _do_pdf_preview),
         (('.csv',), _do_csv_preview),
-        (('.log', '.txt', '.md'), _do_plain_preview),
+        (('.log', '.txt', '.md', '.upf', '.UPF', '.orb'), _do_plain_preview),
         (('.py', '.sh'), _do_code_preview),
         (('.html', '.htm'), _do_html_preview)
     ]
@@ -160,7 +159,9 @@ def show_file_preview(root, selected_file, artifacts_site, height=None):
         st.video(abs_path, format=ft.mime)
     elif ft := audio_match(abs_path):
         st.audio(abs_path, format=ft.mime)
-    elif basename in ('STDOUTERR',):
+    elif basename in ('STDOUTERR', 'INPUT', 'KPT', 'STRU', 'STRU_ION_D', 'kpoints', 'istate.info', 'PDOS', 'TDOS') or (
+        basename.startswith('STRU_ION') and basename.endswith('_D')
+    ) or (basename.startswith('BANDS_') and basename.endswith('.dat')):
         with open(abs_path) as f:
             st.text(f.read())
     else:
