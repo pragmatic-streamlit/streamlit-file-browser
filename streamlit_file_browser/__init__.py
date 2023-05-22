@@ -10,13 +10,14 @@ from base64 import b64encode
 
 from filetype import image_match, video_match, audio_match
 import streamlit as st
+import numpy as np
 import streamlit.components.v1 as components
 from streamlit_molstar import st_molstar, st_molstar_remote
 from streamlit_antd.table import st_antd_table
 from streamlit_embeded import st_embeded
 
 _DEVELOP_MODE = os.getenv('DEVELOP_MODE') or os.getenv('FILE_BROWSER_DEVELOP_MODE')
-
+_DEVELOP_MODE = True
 CACHE_FILE_NAME = ".st-tree.cache"
 
 if _DEVELOP_MODE:
@@ -95,7 +96,8 @@ def _do_csv_preview(root, file_path, url):
     mask = df.applymap(type) != bool
     d = {True: 'True', False: 'False'}
     df = df.where(mask, df.replace(d))
-    st_antd_table(df)
+    df = df.replace(np.nan, None)
+    st.dataframe(df)
 
 def _do_json_preview(root, file_path, url):
     abs_path = os.path.join(root, file_path)
