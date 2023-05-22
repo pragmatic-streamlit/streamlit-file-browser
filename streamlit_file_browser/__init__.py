@@ -17,7 +17,6 @@ from streamlit_antd.table import st_antd_table
 from streamlit_embeded import st_embeded
 
 _DEVELOP_MODE = os.getenv('DEVELOP_MODE') or os.getenv('FILE_BROWSER_DEVELOP_MODE')
-_DEVELOP_MODE = True
 CACHE_FILE_NAME = ".st-tree.cache"
 
 if _DEVELOP_MODE:
