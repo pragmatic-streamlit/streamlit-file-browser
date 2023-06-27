@@ -11,18 +11,19 @@ import FileBrowser, {
   FileBrowserFolder,
 } from "react-keyed-file-browser"
 
+import get from 'lodash.get'
 import IframeResizer from 'iframe-resizer-react'
 import Actions from "./actions"
 import "react-keyed-file-browser/dist/react-keyed-file-browser.css"
 import "font-awesome/css/font-awesome.min.css"
 
 interface File {
-  name: string
   path: string
-  size: number
-  create_time: number
-  update_time: number
-  access_time: number
+  name?: string
+  size?: number
+  create_time?: number
+  update_time?: number
+  access_time?: number
 }
 
 enum StreamlitEventType {
@@ -91,13 +92,14 @@ class FileBrowserStaticServer extends StreamlitComponentBase<State> {
         event.data?.event === "filebrowser_file_choose"
       ) {
         const file: File = {
-          name: event.data?.data?.file?.name,
-          path: `${event.data?.data?.file?.path}`,
-          size: event.data?.data?.file?.size,
-          create_time: event.data?.data?.file?.create_time,
-          update_time: event.data?.data?.file?.update_time,
-          access_time: event.data?.data?.file?.access_time,
+          path: get(event, 'data.data.file.path', ''),
         }
+        get(event, 'data.data.file.name', '') && (file.name = get(event, 'data.data.file.name', ''))
+        get(event, 'data.data.file.size', 0) && (file.size = get(event, 'data.data.file.size', 0))
+        get(event, 'data.data.file.create_time', 0) && (file.create_time = get(event, 'data.data.file.create_time', 0))
+        get(event, 'data.data.file.update_time', 0) && (file.update_time = get(event, 'data.data.file.update_time', 0))
+        get(event, 'data.data.file.access_time', 0) && (file.access_time = get(event, 'data.data.file.access_time', 0))
+
         event.data?.event === "filebrowser_file_selected" && noticeStreamlit({ type: StreamlitEventType.SELECT_FILE, target: file })
         event.data?.event === "filebrowser_dir_selected" && noticeStreamlit({ type: StreamlitEventType.SELECT_FOLDER, target: file })
         const { show_choose_file } = args;
@@ -210,8 +212,8 @@ class FileBrowserNative extends StreamlitComponentBase<State> {
   convertFiles = (files: File[]): FileBrowserFile[] =>
     files.map((file) => ({
       key: file.path,
-      modified: file.update_time,
-      size: file.size,
+      modified: file.update_time || 0,
+      size: file.size || 0,
     }))
 
   noop = () => <></>
