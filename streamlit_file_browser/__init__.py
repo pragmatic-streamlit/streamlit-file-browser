@@ -278,7 +278,7 @@ def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
                 
 
 if _DEVELOP_MODE or os.getenv('SHOW_FILE_BROWSER_DEMO'):
-    
+    current_path = os.path.dirname(os.path.abspath(__file__))
     import time
 
     st.header('Deep glob')
@@ -286,7 +286,7 @@ if _DEVELOP_MODE or os.getenv('SHOW_FILE_BROWSER_DEMO'):
     # If you use the static file server, you must make sure
     # that the path listened to by the static file server
     # is the same as the path passed to st_file_browser by root.
-    event = st_file_browser("../example_artifacts/static_file_server/root",
+    event = st_file_browser(os.path.join(current_path, "..", "example_artifacts/static_file_server/root"),
         key="deep",
         use_static_file_server=True,
         show_choose_file=True,
@@ -302,28 +302,40 @@ if _DEVELOP_MODE or os.getenv('SHOW_FILE_BROWSER_DEMO'):
     st.write(f"代码段执行时间: {execution_time:.6f} 秒")
     st.write(event)
     
+    from streamlit_antd.tabs import st_antd_tabs
+    tab_event = st_antd_tabs([{'Label': 'Upload from local'}, {'Label': 'Choose from workspace'}], key='tab')
+    if tab_event and tab_event['Label'] == 'Choose from workspace':
+        event = st_file_browser(os.path.join(current_path, "..", "example_artifacts"),
+                            artifacts_site="http://localhost:1024/artifacts/", 
+                            artifacts_download_site="http://localhost:1024/download/artifacts/", 
+                            show_choose_file=True, show_download_file=True, glob_patterns=('molecule/**/*',), key='CC')
+    else:
+        event = st.file_uploader(key="ding", label="upload file")
+    
+    
+    
     st.header('Default Options')
-    event = st_file_browser("example_artifacts",
+    event = st_file_browser(os.path.join(current_path, "..", "example_artifacts"),
                             file_ignores=('a.py', 'a.txt', re.compile('.*.pdb')),
                             key='A')
     st.write(event)
 
     st.header('With Artifacts Server, Allow choose & download')
-    event = st_file_browser("example_artifacts",
+    event = st_file_browser(os.path.join(current_path, "..", "example_artifacts"),
                             artifacts_site="http://localhost:1024/artifacts/",
                             artifacts_download_site="http://localhost:1024/download/artifacts/", 
                             show_choose_file=True, show_download_file=True, key='B')
     st.write(event)
 
     st.header('Show only molecule files')
-    event = st_file_browser("example_artifacts",
+    event = st_file_browser(os.path.join(current_path, "..", "example_artifacts"),
                             artifacts_site="http://localhost:1024/artifacts/", 
                             artifacts_download_site="http://localhost:1024/download/artifacts/", 
                             show_choose_file=True, show_download_file=True, glob_patterns=('molecule/**/*',), key='C')
     st.write(event)
 
     st.header('Show only molecule files in sub directory')
-    event = st_file_browser("example_artifacts/molecule",
+    event = st_file_browser(os.path.join(current_path, "..", "example_artifacts/molecule"),
                             artifacts_site="http://localhost:1024/artifacts/molecule/", 
                             artifacts_download_site="http://localhost:1024/download/artifacts/molecule/",
                             show_choose_file=True, show_download_file=True, glob_patterns=('*',), key='D')
