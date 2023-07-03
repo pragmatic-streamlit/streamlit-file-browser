@@ -98,6 +98,17 @@ def _do_csv_preview(root, file_path, url):
     df = df.replace(np.nan, None)
     st.dataframe(df)
 
+def _do_tsv_preview(root, file_path, url):
+    abs_path = os.path.join(root, file_path)
+    import pandas as pd
+
+    df = pd.read_table(abs_path)
+    mask = df.applymap(type) != bool
+    d = {True: 'True', False: 'False'}
+    df = df.where(mask, df.replace(d))
+    df = df.replace(np.nan, None)
+    st.dataframe(df)
+
 def _do_json_preview(root, file_path, url):
     abs_path = os.path.join(root, file_path)
     with open(abs_path) as f:
@@ -120,6 +131,7 @@ PREVIEW_HANDLERS = {
         (('.json',), _do_json_preview),
         (('.pdf',), _do_pdf_preview),
         (('.csv',), _do_csv_preview),
+        (('.tsv',), _do_tsv_preview),
         (('.log', '.txt', '.md', '.upf', '.UPF', '.orb'), _do_plain_preview),
         (('.py', '.sh'), _do_code_preview),
         (('.html', '.htm'), _do_html_preview)
