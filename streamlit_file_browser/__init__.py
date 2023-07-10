@@ -128,7 +128,6 @@ def _do_plain_preview(root, file_path, url):
 # RNA Secondary Structure Formats
 # DB (dot bracket) format (.db, .dbn) is a plain text format that can encode secondory structure.
 def _do_dbn_preview(root, file_path, url):
-    print('dbn file path:', file_path)
     abs_path = os.path.join(root, file_path)
     valid_content = []
     with open(abs_path) as f:
@@ -145,7 +144,7 @@ def _do_dbn_preview(root, file_path, url):
 
     params = f'sequence={valid_content[0]}&structure={valid_content[1]}'
     url = r'http://nibiru.tbi.univie.ac.at/forna/forna.html?id=url/name&' + params
-    components.iframe(url, height=500, scrolling=False)
+    components.iframe(url, height=600)
 
 
 PREVIEW_HANDLERS = {
