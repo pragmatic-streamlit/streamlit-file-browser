@@ -58,12 +58,12 @@ def render_static_file_server(
     )
     return event
 
-def _do_code_preview(root, file_path, url):
+def _do_code_preview(root, file_path, url, **kwargs):
     abs_path = os.path.join(root, file_path)
     with open(abs_path) as f:
-        st.code(f.read())
+        st.code(f.read(), **kwargs)
 
-def _do_pdf_preview(root, file_path, url, height="420px"):
+def _do_pdf_preview(root, file_path, url, height="420px", **kwargs):
     abs_path = os.path.join(root, file_path)
     if url:
         safe_url = escape(url)
@@ -76,7 +76,7 @@ def _do_pdf_preview(root, file_path, url, height="420px"):
     )
     st.markdown(pdf_display, unsafe_allow_html=True)
 
-def _do_molecule_preview(root, file_path, url):
+def _do_molecule_preview(root, file_path, url, **kwargs):
     abs_path = os.path.join(root, file_path)
     test_traj_path = os.path.splitext(abs_path)[0] + '.xtc'
     if os.path.exists(test_traj_path):
@@ -85,9 +85,9 @@ def _do_molecule_preview(root, file_path, url):
     else:
         traj_path = None
         traj_url = None
-    return st_molstar_remote(url, traj_url) if url else st_molstar(abs_path, traj_path)
+    return st_molstar_remote(url, traj_url, **kwargs) if url else st_molstar(abs_path, traj_path, **kwargs)
 
-def _do_csv_preview(root, file_path, url):
+def _do_csv_preview(root, file_path, url, **kwargs):
     abs_path = os.path.join(root, file_path)
     import pandas as pd
 
@@ -96,9 +96,9 @@ def _do_csv_preview(root, file_path, url):
     d = {True: 'True', False: 'False'}
     df = df.where(mask, df.replace(d))
     df = df.replace(np.nan, None)
-    st.dataframe(df)
+    st.dataframe(df, **kwargs)
 
-def _do_tsv_preview(root, file_path, url):
+def _do_tsv_preview(root, file_path, url, **kwargs):
     abs_path = os.path.join(root, file_path)
     import pandas as pd
 
@@ -107,27 +107,27 @@ def _do_tsv_preview(root, file_path, url):
     d = {True: 'True', False: 'False'}
     df = df.where(mask, df.replace(d))
     df = df.replace(np.nan, None)
-    st.dataframe(df)
+    st.dataframe(df, **kwargs)
 
-def _do_json_preview(root, file_path, url):
+def _do_json_preview(root, file_path, url, **kwargs):
     abs_path = os.path.join(root, file_path)
     with open(abs_path) as f:
-        st.json(f.read())
+        st.json(f.read(), **kwargs)
 
-def _do_html_preview(root, file_path, url):
+def _do_html_preview(root, file_path, url, **kwargs):
     abs_path = os.path.join(root, file_path)
     with open(abs_path) as f:
-        st_embeded(f.read())
+        st_embeded(f.read(), **kwargs)
 
-def _do_plain_preview(root, file_path, url):
+def _do_plain_preview(root, file_path, url, **kwargs):
     abs_path = os.path.join(root, file_path)
     with open(abs_path) as f:
-        st.text(f.read())
+        st.text(f.read(), **kwargs)
 
 
 # RNA Secondary Structure Formats
 # DB (dot bracket) format (.db, .dbn) is a plain text format that can encode secondory structure.
-def _do_dbn_preview(root, file_path, url):
+def _do_dbn_preview(root, file_path, url, **kwargs):
     abs_path = os.path.join(root, file_path)
     valid_content = []
     with open(abs_path) as f:
@@ -144,7 +144,7 @@ def _do_dbn_preview(root, file_path, url):
 
     params = f'sequence={valid_content[0]}&structure={valid_content[1]}'
     url = r'http://nibiru.tbi.univie.ac.at/forna/forna.html?id=url/name&' + params
-    components.iframe(url, height=600)
+    components.iframe(url, height=600, **kwargs)
 
 
 PREVIEW_HANDLERS = {
@@ -164,7 +164,7 @@ PREVIEW_HANDLERS = {
 }
 
 
-def show_file_preview(root, selected_file, artifacts_site, height=None):
+def show_file_preview(root, selected_file, artifacts_site, height=None, **kwargs):
     target_path = selected_file["path"]
     abs_path = os.path.join(root, target_path)
     basename = os.path.basename(target_path)
@@ -178,7 +178,7 @@ def show_file_preview(root, selected_file, artifacts_site, height=None):
             from pymatgen.core import Structure
             structure = Structure.from_file(abs_path)
             structure.make_supercell(scaling_matrix=[3, 3, 3], to_unit_cell=False)
-            structure.to(filename=abs_target_path)
+            structure.to(filename=abs_target_path, **kwargs)
         st.caption('scaling_matrix=[3, 3, 3]')
         preview_raw = True
 
@@ -186,26 +186,26 @@ def show_file_preview(root, selected_file, artifacts_site, height=None):
     if ext in PREVIEW_HANDLERS:
         try:
             url = urljoin(artifacts_site, target_path) if artifacts_site else None
-            PREVIEW_HANDLERS[ext](root, target_path, url)
+            PREVIEW_HANDLERS[ext](root, target_path, url, **kwargs)
         except Exception as e:
             st.error(f'failed preview {target_path}')
             st.exception(e)
     elif ft := image_match(abs_path):
-        st.image(abs_path)
+        st.image(abs_path, **kwargs)
     elif ft := video_match(abs_path):
-        st.video(abs_path, format=ft.mime)
+        st.video(abs_path, format=ft.mime, **kwargs)
     elif ft := audio_match(abs_path):
-        st.audio(abs_path, format=ft.mime)
+        st.audio(abs_path, format=ft.mime, **kwargs)
     elif basename in ('STDOUTERR', 'INPUT', 'KPT', 'STRU', 'STRU_ION_D', 'kpoints', 'istate.info', 'PDOS', 'TDOS') or (
         basename.startswith('STRU_ION') and basename.endswith('_D')
     ) or (basename.startswith('BANDS_') and basename.endswith('.dat')):
         with open(abs_path) as f:
-            st.text(f.read())
+            st.text(f.read(), **kwargs)
     else:
         st.info(f"No preview aviable for {ext}")
     if preview_raw:
         with open(abs_path) as f:
-            st.text(f.read())
+            st.text(f.read(), **kwargs)
 
 def _get_file_info(root, path):
     stat = os.stat(path)
