@@ -7,6 +7,7 @@ from wcmatch import glob
 from urllib.parse import urljoin
 from html import escape
 from base64 import b64encode
+import urllib
 
 from filetype import image_match, video_match, audio_match
 import streamlit as st
@@ -129,21 +130,16 @@ def _do_plain_preview(root, file_path, url):
 # DB (dot bracket) format (.db, .dbn) is a plain text format that can encode secondory structure.
 def _do_dbn_preview(root, file_path, url):
     abs_path = os.path.join(root, file_path)
-    valid_content = []
-    with open(abs_path) as f:
-        for line in f.readlines():
-            line = line.strip()
-            if line.startswith(">") or line.startswith("#") or not line:
-                continue
+    content = ""
+    with open(abs_path, 'r', encoding='utf8') as f:
+        content = f.read()
 
-            valid_content.append(line)
-
-    if len(valid_content) == 1:
-        # structure is optional
-        valid_content.append("")
-
-    params = f'sequence={valid_content[0]}&structure={valid_content[1]}'
-    url = r'http://nibiru.tbi.univie.ac.at/forna/forna.html?id=url/name&' + params
+    encoding = urllib.parse.urlencode({
+            'id': 'fasta',
+            'file': content
+        }, safe=r'()[]{}>#')
+    encoding = encoding.replace('%0A', '%5Cn').replace('#', '>')
+    url = r'https://mrna-proxy.mlops.dp.tech/forna/forna.html?' + encoding
     components.iframe(url, height=600)
 
 
