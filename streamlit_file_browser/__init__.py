@@ -124,6 +124,30 @@ def _do_plain_preview(root, file_path, url):
     with open(abs_path) as f:
         st.text(f.read())
 
+
+# RNA Secondary Structure Formats
+# DB (dot bracket) format (.db, .dbn) is a plain text format that can encode secondory structure.
+def _do_dbn_preview(root, file_path, url):
+    print('dbn file path:', file_path)
+    abs_path = os.path.join(root, file_path)
+    valid_content = []
+    with open(abs_path) as f:
+        for line in f.readlines():
+            line = line.strip()
+            if line.startswith(">") or line.startswith("#") or not line:
+                continue
+
+            valid_content.append(line)
+
+    if len(valid_content) == 1:
+        # structure is optional
+        valid_content.append("")
+
+    params = f'sequence={valid_content[0]}&structure={valid_content[1]}'
+    url = r'http://nibiru.tbi.univie.ac.at/forna/forna.html?id=url/name&' + params
+    components.iframe(url, height=500, scrolling=False)
+
+
 PREVIEW_HANDLERS = {
     extention: handler 
     for extentions, handler in [
@@ -134,7 +158,8 @@ PREVIEW_HANDLERS = {
         (('.tsv',), _do_tsv_preview),
         (('.log', '.txt', '.md', '.upf', '.UPF', '.orb'), _do_plain_preview),
         (('.py', '.sh'), _do_code_preview),
-        (('.html', '.htm'), _do_html_preview)
+        (('.html', '.htm'), _do_html_preview),
+        (('.dbn',), _do_dbn_preview)
     ]
     for extention in extentions
 }
