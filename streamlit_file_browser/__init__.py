@@ -8,12 +8,15 @@ from urllib.parse import urljoin
 from html import escape
 from base64 import b64encode
 import urllib
+from functools import partial
 
+from binaryornot.check import is_binary
 from filetype import image_match, video_match, audio_match
 import streamlit as st
 import numpy as np
 import streamlit.components.v1 as components
 from streamlit_molstar import st_molstar, st_molstar_remote
+from streamlit_molstar.auto import st_molstar_auto
 from streamlit_antd.table import st_antd_table
 from streamlit_embeded import st_embeded
 
@@ -78,6 +81,7 @@ def _do_pdf_preview(root, file_path, url, height="420px", **kwargs):
     st.markdown(pdf_display, unsafe_allow_html=True)
 
 def _do_molecule_preview(root, file_path, url, **kwargs):
+    use_auto = kwargs.pop('use_auto', False)
     abs_path = os.path.join(root, file_path)
     test_traj_path = os.path.splitext(abs_path)[0] + '.xtc'
     if os.path.exists(test_traj_path):
@@ -86,7 +90,14 @@ def _do_molecule_preview(root, file_path, url, **kwargs):
     else:
         traj_path = None
         traj_url = None
-    return st_molstar_remote(url, traj_url, **kwargs) if url else st_molstar(abs_path, traj_path, **kwargs)
+    if use_auto:
+        st_molstar_auto([url or abs_path], **kwargs)
+    else:
+        if url:
+            st_molstar_remote(url, traj_url, **kwargs)
+        else:
+            st_molstar(abs_path, traj_path, **kwargs)
+    return True
 
 def _do_csv_preview(root, file_path, url, **kwargs):
     abs_path = os.path.join(root, file_path)
@@ -98,6 +109,7 @@ def _do_csv_preview(root, file_path, url, **kwargs):
     df = df.where(mask, df.replace(d))
     df = df.replace(np.nan, None)
     st.dataframe(df, **kwargs)
+    return True
 
 def _do_tsv_preview(root, file_path, url, **kwargs):
     abs_path = os.path.join(root, file_path)
@@ -109,6 +121,7 @@ def _do_tsv_preview(root, file_path, url, **kwargs):
     df = df.where(mask, df.replace(d))
     df = df.replace(np.nan, None)
     st.dataframe(df, **kwargs)
+    return True
 
 def _do_json_preview(root, file_path, url, **kwargs):
     abs_path = os.path.join(root, file_path)
@@ -119,6 +132,7 @@ def _do_html_preview(root, file_path, url, **kwargs):
     abs_path = os.path.join(root, file_path)
     with open(abs_path) as f:
         st_embeded(f.read(), **kwargs)
+    return True
 
 def _do_plain_preview(root, file_path, url, **kwargs):
     abs_path = os.path.join(root, file_path)
@@ -144,9 +158,10 @@ def _do_dbn_preview(root, file_path, url, **kwargs):
 
 
 PREVIEW_HANDLERS = {
-    extention: handler 
+    extention: handler
     for extentions, handler in [
-        (('.pdb', '.pdbqt', '.ent', '.trr', '.nctraj', '.nc', '.ply', '.bcif', '.sdf', '.cif', '.mol', '.mol2', '.xyz', '.sd', '.gro'), _do_molecule_preview),
+        (('.pdb', '.pdbqt', '.ent', '.trr', '.nctraj', '.nc', '.ply', '.bcif', '.sdf', '.cif', '.mol', '.mol2', '.xyz', '.sd', '.gro', '.mrc'), _do_molecule_preview),
+        (('.mrc',), partial(_do_molecule_preview, use_auto=True)),
         (('.json',), _do_json_preview),
         (('.pdf',), _do_pdf_preview),
         (('.csv',), _do_csv_preview),
@@ -161,47 +176,56 @@ PREVIEW_HANDLERS = {
 
 
 def show_file_preview(root, selected_file, artifacts_site, height=None, **kwargs):
+    key = kwargs.pop('key', None)
     target_path = selected_file["path"]
     abs_path = os.path.join(root, target_path)
     basename = os.path.basename(target_path)
-    
-    preview_raw = False
-    if basename in ('POSCAR', 'CONTCAR', 'POSCAR.txt', 'CONTCAR.txt'):
-        basename = f'{basename}.cif'
-        target_path = os.path.join(os.path.dirname(target_path), basename)
-        abs_target_path = os.path.join(root, target_path)
-        if not os.path.exists(abs_target_path):
-            from pymatgen.core import Structure
-            structure = Structure.from_file(abs_path)
-            structure.make_supercell(scaling_matrix=[3, 3, 3], to_unit_cell=False)
-            structure.to(filename=abs_target_path, **kwargs)
-        st.caption('scaling_matrix=[3, 3, 3]')
-        preview_raw = True
-
-    ext = os.path.splitext(target_path)[1]
-    if ext in PREVIEW_HANDLERS:
-        try:
-            url = urljoin(artifacts_site, target_path) if artifacts_site else None
-            PREVIEW_HANDLERS[ext](root, target_path, url, **kwargs)
-        except Exception as e:
-            st.error(f'failed preview {target_path}')
-            st.exception(e)
-    elif ft := image_match(abs_path):
-        st.image(abs_path, **kwargs)
-    elif ft := video_match(abs_path):
-        st.video(abs_path, format=ft.mime, **kwargs)
-    elif ft := audio_match(abs_path):
-        st.audio(abs_path, format=ft.mime, **kwargs)
-    elif basename in ('STDOUTERR', 'INPUT', 'KPT', 'STRU', 'STRU_ION_D', 'kpoints', 'istate.info', 'PDOS', 'TDOS') or (
-        basename.startswith('STRU_ION') and basename.endswith('_D')
-    ) or (basename.startswith('BANDS_') and basename.endswith('.dat')):
-        with open(abs_path) as f:
-            st.text(f.read(), **kwargs)
-    else:
-        st.info(f"No preview aviable for {ext}")
+    preview_raw = not is_binary(abs_path)
     if preview_raw:
-        with open(abs_path) as f:
-            st.text(f.read(), **kwargs)
+        preview, raw = st.tabs(['Preview', 'Text'])
+    else:
+        preview, raw = st.container(), None
+
+    with preview:
+        if basename in ('POSCAR', 'CONTCAR', 'POSCAR.txt', 'CONTCAR.txt'):
+            basename = f'{basename}.cif'
+            target_path = os.path.join(os.path.dirname(target_path), basename)
+            abs_target_path = os.path.join(root, target_path)
+            if not os.path.exists(abs_target_path):
+                from pymatgen.core import Structure
+                structure = Structure.from_file(abs_path)
+                #structure.make_supercell(scaling_matrix=[3, 3, 3], to_unit_cell=False)
+                structure.to(filename=abs_target_path, **kwargs)
+            #st.caption('scaling_matrix=[3, 3, 3]')
+
+        ext = os.path.splitext(target_path)[1]
+        need_raw = False
+        text_mode = not is_binary(abs_path)
+        if ext in PREVIEW_HANDLERS or text_mode:
+            try:
+                handler = PREVIEW_HANDLERS[ext]
+                url = urljoin(artifacts_site, target_path) if artifacts_site else None
+                need_raw = handler(root, target_path, url, **kwargs)
+            except Exception as e:
+                st.error(f'failed preview {target_path}')
+                st.exception(e)
+        elif ft := image_match(abs_path):
+            st.image(abs_path, **kwargs)
+        elif ft := video_match(abs_path):
+            st.video(abs_path, format=ft.mime, **kwargs)
+        elif ft := audio_match(abs_path):
+            st.audio(abs_path, format=ft.mime, **kwargs)
+        elif not text_mode:
+            st.info(f"No preview aviable for {ext}")
+
+    #if raw and need_raw:
+    if raw:
+        with raw:
+            with open(abs_path) as f:
+                rs = f.readlines(10000)
+                if len(rs) == 10000:
+                    st.warning('File too large, only show first 10000 lines')
+                st.text_area(label='', value=''.join(rs), label_visibility='collapsed', key=f'{key}-raw')
 
 def _get_file_info(root, path):
     stat = os.stat(path)
@@ -282,8 +306,7 @@ def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
 
         files = [file for file in files if str(file["path"]).endswith(extentions)] if extentions else files
         if show_preview and show_preview_top:
-            with st.expander('', expanded=True):
-                preview = st.container()
+            preview = st.container()
         if not artifacts_download_site and artifacts_site:
             artifacts_download_site = artifacts_site
         event = _component_func(files=files,
@@ -302,10 +325,11 @@ def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
                     return event
             if show_preview and show_preview_top:
                 with preview:
-                    show_file_preview(file, artifacts_site)
+                    with st.expander('', expanded=True):
+                        show_file_preview(file, artifacts_site, key=f'{key}-preview')
             elif show_preview and not show_preview_top:
                 with st.expander('', expanded=True):
-                    show_file_preview(str(root), file, artifacts_site)
+                    show_file_preview(str(root), file, artifacts_site, key=f'{key}-preview')
     return event
                 
 

@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="streamlit-file-browser",
-    version="3.1.6",
+    version="3.2.0",
     author="",
     author_email="",
     description="",
@@ -16,8 +16,9 @@ setuptools.setup(
     install_requires=[
         "pandas",
         "filetype",
+        "binaryornot",
         "wcmatch",
-        "streamlit-molstar >= 0.1.6",
+        "streamlit-molstar >= 0.4.1",
         "streamlit-antd",
         "streamlit-embeded",
         "streamlit >= 0.63",
