@@ -175,7 +175,7 @@ PREVIEW_HANDLERS = {
 }
 
 
-def show_file_preview(root, selected_file, artifacts_site, key, height=None, **kwargs):
+def show_file_preview(root, selected_file, artifacts_site, key=None, height=None, **kwargs):
     target_path = selected_file["path"]
     abs_path = os.path.join(root, target_path)
     basename = os.path.basename(target_path)
