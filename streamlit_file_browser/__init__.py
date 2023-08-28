@@ -194,18 +194,15 @@ def show_file_preview(root, selected_file, artifacts_site, key=None, height=None
             if not os.path.exists(abs_target_path):
                 from pymatgen.core import Structure
                 structure = Structure.from_file(abs_path)
-                #structure.make_supercell(scaling_matrix=[3, 3, 3], to_unit_cell=False)
                 structure.to(filename=abs_target_path, **kwargs)
-            #st.caption('scaling_matrix=[3, 3, 3]')
 
         ext = os.path.splitext(target_path)[1]
-        need_raw = False
         text_mode = not is_binary(abs_path)
-        if ext in PREVIEW_HANDLERS or text_mode:
+        if ext in PREVIEW_HANDLERS:
             try:
                 handler = PREVIEW_HANDLERS[ext]
                 url = urljoin(artifacts_site, target_path) if artifacts_site else None
-                need_raw = handler(root, target_path, url, **kwargs)
+                handler(root, target_path, url, **kwargs)
             except Exception as e:
                 st.error(f'failed preview {target_path}')
                 st.exception(e)
@@ -218,7 +215,6 @@ def show_file_preview(root, selected_file, artifacts_site, key=None, height=None
         elif not text_mode:
             st.info(f"No preview aviable for {ext}")
 
-    #if raw and need_raw:
     if raw:
         with raw:
             with open(abs_path) as f:
