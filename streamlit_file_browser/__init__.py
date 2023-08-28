@@ -91,7 +91,7 @@ def _do_molecule_preview(root, file_path, url, **kwargs):
         traj_path = None
         traj_url = None
     if use_auto:
-        st_molstar_auto([url or abs_path], **kwargs)
+        st_molstar_auto([{'file': url, 'local': abs_path} if url else abs_path], **kwargs)
     else:
         if url:
             st_molstar_remote(url, traj_url, **kwargs)
