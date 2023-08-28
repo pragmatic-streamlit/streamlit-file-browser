@@ -175,8 +175,7 @@ PREVIEW_HANDLERS = {
 }
 
 
-def show_file_preview(root, selected_file, artifacts_site, height=None, **kwargs):
-    key = kwargs.pop('key', None)
+def show_file_preview(root, selected_file, artifacts_site, key=None, height=None, **kwargs):
     target_path = selected_file["path"]
     abs_path = os.path.join(root, target_path)
     basename = os.path.basename(target_path)
@@ -326,7 +325,7 @@ def st_file_browser(path: str, *, show_preview=True, show_preview_top=False,
             if show_preview and show_preview_top:
                 with preview:
                     with st.expander('', expanded=True):
-                        show_file_preview(file, artifacts_site, key=f'{key}-preview')
+                        show_file_preview(str(root), file, artifacts_site, key=f'{key}-preview')
             elif show_preview and not show_preview_top:
                 with st.expander('', expanded=True):
                     show_file_preview(str(root), file, artifacts_site, key=f'{key}-preview')
