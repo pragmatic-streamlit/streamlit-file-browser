@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="streamlit-file-browser",
-    version="3.2.1",
+    version="3.2.2",
     author="",
     author_email="",
     description="",
@@ -18,7 +18,7 @@ setuptools.setup(
         "filetype",
         "binaryornot",
         "wcmatch",
-        "streamlit-molstar >= 0.4.1",
+        "streamlit-molstar >= 0.4.3",
         "streamlit-antd",
         "streamlit-embeded",
         "streamlit >= 0.63",
