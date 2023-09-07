@@ -15,12 +15,13 @@ from filetype import image_match, video_match, audio_match
 import streamlit as st
 import numpy as np
 import streamlit.components.v1 as components
+from streamlit_ace import st_ace
 from streamlit_molstar import st_molstar, st_molstar_remote
 from streamlit_molstar.auto import st_molstar_auto
 from streamlit_antd.table import st_antd_table
 from streamlit_embeded import st_embeded
 
-_DEVELOP_MODE = os.getenv('DEVELOP_MODE') or os.getenv('FILE_BROWSER_DEVELOP_MODE')
+_DEVELOP_MODE = os.getenv('STREAMLIT_FILE_BROWSER_DEVELOP_MODE')
 CACHE_FILE_NAME = ".st-tree.cache"
 
 if _DEVELOP_MODE:
@@ -138,7 +139,8 @@ def _do_html_preview(root, file_path, url, **kwargs):
 def _do_plain_preview(root, file_path, url, **kwargs):
     abs_path = os.path.join(root, file_path)
     with open(abs_path) as f:
-        st.text(f.read(), **kwargs)
+        key = f'{kwargs.get("key", abs_path)}-preview'
+        st_ace(value=f.read(), readonly=True, show_gutter=False, key=key)
 
 
 # RNA Secondary Structure Formats
@@ -221,7 +223,8 @@ def show_file_preview(root, selected_file, artifacts_site, key=None, height=None
                 rs = f.readlines(10000)
                 if len(rs) == 10000:
                     st.warning('File too large, only show first 10000 lines')
-                st.text_area(label='', value=''.join(rs), label_visibility='collapsed', key=f'{key}-raw')
+                key = f"{kwargs.get('key', abs_path)}-raw"
+                st_ace(value=''.join(rs), readonly=True, show_gutter=False, key=key)
 
 def _get_file_info(root, path):
     stat = os.stat(path)
