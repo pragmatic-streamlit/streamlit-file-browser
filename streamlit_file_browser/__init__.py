@@ -238,7 +238,8 @@ def show_file_preview(
 
         ext = os.path.splitext(target_path)[1]
         text_mode = not is_binary(abs_path)
-        handles = copy.copy(PREVIEW_HANDLERS).update(overide_preview_handles or {})
+        handles = copy.copy(PREVIEW_HANDLERS)
+        handles.update(overide_preview_handles or {})
         if ext in handles:
             try:
                 handler = handles[ext]
