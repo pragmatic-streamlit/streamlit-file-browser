@@ -142,7 +142,9 @@ def _do_json_preview(root, file_path, url, **kwargs):
 def _do_html_preview(root, file_path, url, **kwargs):
     abs_path = os.path.join(root, file_path)
     with open(abs_path) as f:
-        st_embeded(f.read(), **kwargs)
+        html = f.read()
+        html = html.replace("launching-artifacts://", kwargs.pop("artifacts_site", ""))
+        st_embeded(html, **kwargs)
     return True
 
 
@@ -244,6 +246,7 @@ def show_file_preview(
             try:
                 handler = handles[ext]
                 url = urljoin(artifacts_site, target_path) if artifacts_site else None
+                kwargs["artifacts_site"] = artifacts_site
                 handler(root, target_path, url, **kwargs)
             except Exception as e:
                 st.error(f"failed preview {target_path}")

@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="streamlit-file-browser",
-    version="3.2.6",
+    version="3.2.11",
     author="",
     author_email="",
     description="",
