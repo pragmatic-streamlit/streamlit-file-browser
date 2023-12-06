@@ -143,7 +143,15 @@ def _do_html_preview(root, file_path, url, **kwargs):
     abs_path = os.path.join(root, file_path)
     with open(abs_path) as f:
         html = f.read()
-        html = html.replace("launching-artifacts://", kwargs.pop("artifacts_site", ""))
+        # TODO fix this hardcode
+
+        artifacts_url = urljoin("https://launching.mlops.dp.tech/artifacts/", file_path[: file_path.rfind("/")+1])
+        print(f"artifacts_url old: {artifacts_url}")
+        artifacts_url = url[: url.rfind("/")+1]
+        print(f"artifacts_url: {artifacts_url}")
+        artifacts_url = artifacts_url.replace("https://launching.mlops.dp.tech/users/", "https://launching.mlops.dp.tech/artifacts/users/")
+        artifacts_url = artifacts_url.replace("https://canary-launching.mlops.dp.tech/users/", "https://canary-launching.mlops.dp.tech/artifacts/users/")
+        html = html.replace("launching-artifacts://", artifacts_url)
         st_embeded(html, **kwargs)
     return True
 
@@ -246,7 +254,6 @@ def show_file_preview(
             try:
                 handler = handles[ext]
                 url = urljoin(artifacts_site, target_path) if artifacts_site else None
-                kwargs["artifacts_site"] = artifacts_site
                 handler(root, target_path, url, **kwargs)
             except Exception as e:
                 st.error(f"failed preview {target_path}")
