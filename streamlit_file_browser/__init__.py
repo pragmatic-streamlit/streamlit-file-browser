@@ -156,6 +156,13 @@ def _do_html_preview(root, file_path, url, **kwargs):
     return True
 
 
+def _do_markdown_preview(root, file_path, url, **kwargs):
+    abs_path = os.path.join(root, file_path)
+    with open(abs_path) as f:
+        key = f'{kwargs.get("key", abs_path)}-preview'
+        st.markdown(f.read(), unsafe_allow_html=True)
+
+
 def _do_plain_preview(root, file_path, url, **kwargs):
     abs_path = os.path.join(root, file_path)
     with open(abs_path) as f:
@@ -209,6 +216,7 @@ PREVIEW_HANDLERS = {
         ((".csv",), _do_csv_preview),
         ((".tsv",), _do_tsv_preview),
         ((".log", ".txt", ".md", ".upf", ".UPF", ".orb"), _do_plain_preview),
+        ((".md",), _do_markdown_preview),
         ((".py", ".sh"), _do_code_preview),
         ((".html", ".htm"), _do_html_preview),
         ((".dbn",), _do_dbn_preview),
