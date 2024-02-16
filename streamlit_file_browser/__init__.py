@@ -362,6 +362,7 @@ def st_file_browser(
     use_static_file_server=False,
     overide_preview_handles=None,
     static_file_server_path=None,
+    sort=None,
 ):
     extentions = tuple(extentions) if extentions else None
     root = pathlib.Path(os.path.abspath(path))
@@ -394,6 +395,12 @@ def st_file_browser(
             preview = st.container()
         if not artifacts_download_site and artifacts_site:
             artifacts_download_site = artifacts_site
+            
+        other_params = {}
+        if sort and callable(sort):
+            files = sort(files)
+            other_params["sort"] = None
+        
         event = _component_func(
             files=files,
             show_choose_file=show_choose_file,
@@ -403,6 +410,7 @@ def st_file_browser(
             artifacts_download_site=artifacts_download_site,
             artifacts_site=artifacts_site,
             key=key,
+            **other_params,
         )
     if event:
         if event["type"] == "SELECT_FILE" and (
@@ -486,10 +494,14 @@ if _DEVELOP_MODE or os.getenv("SHOW_FILE_BROWSER_DEMO"):
         event = st.file_uploader(key="ding", label="upload file")
 
     st.header("Default Options")
+    def sort(files):
+        return sorted(files, key=lambda x: x["size"])
+    
     event = st_file_browser(
         os.path.join(current_path, "..", "example_artifacts"),
         file_ignores=("a.py", "a.txt", re.compile(".*.pdb")),
         key="A",
+        sort=sort,
     )
     st.write(event)
 
