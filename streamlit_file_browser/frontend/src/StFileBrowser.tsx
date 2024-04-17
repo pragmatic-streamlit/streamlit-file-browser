@@ -11,8 +11,8 @@ import FileBrowser, {
   FileBrowserFolder,
 } from "react-keyed-file-browser"
 
-import get from 'lodash.get'
-import IframeResizer from 'iframe-resizer-react'
+import get from "lodash.get"
+import IframeResizer from "iframe-resizer-react"
 import Actions from "./actions"
 import "react-keyed-file-browser/dist/react-keyed-file-browser.css"
 import "font-awesome/css/font-awesome.min.css"
@@ -24,6 +24,11 @@ interface File {
   create_time?: number
   update_time?: number
   access_time?: number
+}
+
+interface Folder {
+  path: string
+  name?: string
 }
 
 enum StreamlitEventType {
@@ -39,11 +44,12 @@ enum StreamlitEventType {
   MOVE_FILE = "MOVE_FILE",
   MOVE_FOLDER = "MOVE_FOLDER",
   CHOOSE_FILE = "CHOOSE_FILE",
+  CHOOSE_FOLDER = "CHOOSE_FOLDER",
 }
 
 interface StreamlitEvent {
   type: StreamlitEventType
-  target: File | File[]
+  target: File | Folder | (File | Folder)[]
 }
 
 interface State {
@@ -57,19 +63,21 @@ interface IArgs {
   artifacts_download_site: string
   show_download_file: boolean
   show_delete_file: boolean
+  show_choose_folder: boolean
   show_choose_file: boolean
   show_new_folder: boolean
   show_upload_file: boolean
   ignore_file_select_event: boolean
+  ignore_folder_select_event: boolean
   static_file_server_path: string
 }
 
-const noticeStreamlit = (event: StreamlitEvent) =>
+const noticeStreamlit = (event: StreamlitEvent | StreamlitEvent[]) =>
   Streamlit.setComponentValue(event)
 
 class FileBrowserStaticServer extends StreamlitComponentBase<State> {
   private args: IArgs
-  
+
   constructor(props: ComponentProps) {
     super(props)
     this.args = props.args
@@ -78,11 +86,11 @@ class FileBrowserStaticServer extends StreamlitComponentBase<State> {
   ajustHeight(revoke_step?: number) {
     Streamlit.setFrameHeight()
   }
-  
+
   componentDidMount(): void {
     const root = this.args.path
-    const args = this.args;
-    window.addEventListener('message', function(event) {
+    const args = this.args
+    window.addEventListener("message", function (event) {
       // console.log('从 iframe 中传递过来的点击事件:', event.data);
       if (
         event.data?.event === "filebrowser_file_selected" ||
@@ -92,22 +100,55 @@ class FileBrowserStaticServer extends StreamlitComponentBase<State> {
         event.data?.event === "filebrowser_file_choose"
       ) {
         const file: File = {
-          path: get(event, 'data.data.file.path', ''),
+          path: get(event, "data.data.file.path", ""),
         }
-        get(event, 'data.data.file.name', '') && (file.name = get(event, 'data.data.file.name', ''))
-        get(event, 'data.data.file.size', 0) && (file.size = get(event, 'data.data.file.size', 0))
-        get(event, 'data.data.file.create_time', 0) && (file.create_time = get(event, 'data.data.file.create_time', 0))
-        get(event, 'data.data.file.update_time', 0) && (file.update_time = get(event, 'data.data.file.update_time', 0))
-        get(event, 'data.data.file.access_time', 0) && (file.access_time = get(event, 'data.data.file.access_time', 0))
+        get(event, "data.data.file.name", "") &&
+          (file.name = get(event, "data.data.file.name", ""))
+        get(event, "data.data.file.size", 0) &&
+          (file.size = get(event, "data.data.file.size", 0))
+        get(event, "data.data.file.create_time", 0) &&
+          (file.create_time = get(event, "data.data.file.create_time", 0))
+        get(event, "data.data.file.update_time", 0) &&
+          (file.update_time = get(event, "data.data.file.update_time", 0))
+        get(event, "data.data.file.access_time", 0) &&
+          (file.access_time = get(event, "data.data.file.access_time", 0))
 
-        event.data?.event === "filebrowser_file_selected" && noticeStreamlit({ type: StreamlitEventType.SELECT_FILE, target: file })
-        event.data?.event === "filebrowser_dir_selected" && noticeStreamlit({ type: StreamlitEventType.SELECT_FOLDER, target: file })
-        const { show_choose_file } = args;
-        event.data?.event === "filebrowser_file_double_selected" && show_choose_file && noticeStreamlit({ type: StreamlitEventType.CHOOSE_FILE, target: [file] })
-        event.data?.event === "filebrowser_file_choose" && show_choose_file && noticeStreamlit({ type: StreamlitEventType.CHOOSE_FILE, target: [file] })
-        event.data?.event === "filebrowser_path_changed" && noticeStreamlit({ type: StreamlitEventType.SELECT_FOLDER, target: file })
+        event.data?.event === "filebrowser_file_selected" &&
+          noticeStreamlit({
+            type: StreamlitEventType.SELECT_FILE,
+            target: file,
+          })
+        event.data?.event === "filebrowser_dir_selected" &&
+          noticeStreamlit({
+            type: StreamlitEventType.SELECT_FOLDER,
+            target: file,
+          })
+        const { show_choose_file, show_choose_folder } = args
+        event.data?.event === "filebrowser_file_double_selected" &&
+          show_choose_file &&
+          noticeStreamlit({
+            type: StreamlitEventType.CHOOSE_FILE,
+            target: [file],
+          })
+        event.data?.event === "filebrowser_file_choose" &&
+          show_choose_file &&
+          noticeStreamlit({
+            type: StreamlitEventType.CHOOSE_FILE,
+            target: [file],
+          })
+        event.data?.event === "filebrowser_folder_choose" &&
+          show_choose_folder &&
+          noticeStreamlit({
+            type: StreamlitEventType.CHOOSE_FOLDER,
+            target: [file],
+          })
+        event.data?.event === "filebrowser_path_changed" &&
+          noticeStreamlit({
+            type: StreamlitEventType.SELECT_FOLDER,
+            target: file,
+          })
       }
-    });
+    })
     this.ajustHeight()
   }
 
@@ -127,14 +168,13 @@ class FileBrowserStaticServer extends StreamlitComponentBase<State> {
         autoResize
         onResized={this.onResized}
         frameBorder={0}
-        style={{ width: '100%' }}
+        style={{ width: "100%" }}
         src={this.args.static_file_server_path}
       />
     )
-
   }
 }
-  
+
 class FileBrowserNative extends StreamlitComponentBase<State> {
   private args: IArgs
 
@@ -175,6 +215,19 @@ class FileBrowserNative extends StreamlitComponentBase<State> {
     }
   }
 
+  folderSelectedHandler = (opts: FileBrowserFolder) => {
+    if (!this.args.ignore_folder_select_event) {
+      const files = this.args.files.filter(
+        (file) => file.path !== opts.key && file.path.startsWith(opts.key)
+      )
+      files &&
+        noticeStreamlit({
+          type: StreamlitEventType.SELECT_FOLDER,
+          target: { path: opts.key },
+        })
+    }
+  }
+
   downlandHandler = (keys: string[]) => {
     const files = this.args.files.filter((file) => keys.includes(file.path))
     files.forEach((file) => {
@@ -193,20 +246,59 @@ class FileBrowserNative extends StreamlitComponentBase<State> {
   }
 
   deleteFileHandler = (fileKey: string | string[]) => {
-    const files = this.args.files.filter((file) => typeof fileKey === 'string' ? fileKey === file.path : fileKey.includes(file.path))
+    const files = this.args.files.filter((file) =>
+      typeof fileKey === "string"
+        ? fileKey === file.path
+        : fileKey.includes(file.path)
+    )
     console.log("deleteFileHandler", "key", fileKey, "files ", files)
 
     files.length &&
       noticeStreamlit({ type: StreamlitEventType.DELETE_FILE, target: files })
 
-    const remainingFiles = this.args.files.filter((file) => typeof fileKey === 'string' ? fileKey !== file.path : !fileKey.includes(file.path))
+    const remainingFiles = this.args.files.filter((file) =>
+      typeof fileKey === "string"
+        ? fileKey !== file.path
+        : !fileKey.includes(file.path)
+    )
     this.args.files = remainingFiles
   }
 
   chooseHandler = (keys: string[]) => {
-    const files = this.args.files.filter((file) => keys.includes(file.path))
-    files.length &&
-      noticeStreamlit({ type: StreamlitEventType.CHOOSE_FILE, target: files })
+    const folders = keys
+      .filter((key) => key.endsWith("/"))
+      .map((key) => ({ path: key }))
+
+    const files = this.args.files.filter(
+      (file) => keys.includes(file.path) && !file.path.endsWith("/")
+    )
+
+    if (folders.length && !files.length) {
+      return noticeStreamlit({
+        type: StreamlitEventType.CHOOSE_FOLDER,
+        target: folders,
+      })
+    }
+
+    if (files.length && !folders.length) {
+      return noticeStreamlit({
+        type: StreamlitEventType.CHOOSE_FILE,
+        target: files,
+      })
+    }
+
+    if (files.length && folders.length) {
+      return noticeStreamlit([
+        {
+          type: StreamlitEventType.CHOOSE_FOLDER,
+          target: folders,
+        },
+        {
+          type: StreamlitEventType.CHOOSE_FILE,
+          target: files,
+        },
+      ])
+    }
   }
 
   convertFiles = (files: File[]): FileBrowserFile[] =>
@@ -218,7 +310,8 @@ class FileBrowserNative extends StreamlitComponentBase<State> {
 
   noop = () => <></>
   public render = () => {
-    let that = this
+    const that = this
+
     return (
       <div>
         <FileBrowser
@@ -231,6 +324,7 @@ class FileBrowserNative extends StreamlitComponentBase<State> {
           onFolderOpen={this.folderOpenHandler}
           onFolderClose={this.folderCloseHandler}
           onSelect={this.fileSelectedHandler}
+          onSelectFolder={this.folderSelectedHandler}
           onDownloadFile={this.downlandHandler}
           onDeleteFile={this.deleteFileHandler}
           actionRenderer={(...args: any) => {
@@ -238,17 +332,22 @@ class FileBrowserNative extends StreamlitComponentBase<State> {
               ...args[0],
               ...{
                 canChooseFile: that.args.show_choose_file,
+                canChooseFolder: that.args.show_choose_folder,
                 canDownloadFile:
                   that.args.show_download_file &&
                   that.args.artifacts_download_site,
                 canDeleteFile: that.args.show_delete_file,
+                onChooseFolder: (keys: string[]) =>
+                  that.chooseHandler(
+                    args[0].selectedItems.map((i: any) => i.key)
+                  ),
                 onChooseFile: (keys: string[]) =>
                   that.chooseHandler(
                     args[0].selectedItems.map((i: any) => i.key)
                   ),
                 onDeleteFile: (fileKey: string[]) =>
                   that.deleteFileHandler(
-                      args[0].selectedItems.map((i: any) => i.key)
+                    args[0].selectedItems.map((i: any) => i.key)
                   ),
               },
             })
@@ -259,11 +358,13 @@ class FileBrowserNative extends StreamlitComponentBase<State> {
   }
 }
 const StreamlitFileBrowserNative = withStreamlitConnection(FileBrowserNative)
-const StreamlitFileBrowserStaticServer = withStreamlitConnection(FileBrowserStaticServer)
+const StreamlitFileBrowserStaticServer = withStreamlitConnection(
+  FileBrowserStaticServer
+)
 
 class FileBrowserWrapper extends StreamlitComponentBase<State> {
   private args: IArgs
-  
+
   constructor(props: ComponentProps) {
     super(props)
     this.args = props.args
