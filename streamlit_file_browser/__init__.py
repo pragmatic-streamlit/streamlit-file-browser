@@ -19,10 +19,10 @@ import streamlit.components.v1 as components
 from streamlit_ace import st_ace
 from streamlit_molstar import st_molstar, st_molstar_remote
 from streamlit_molstar.auto import st_molstar_auto
-from streamlit_antd.table import st_antd_table
 from streamlit_embeded import st_embeded
 
 _DEVELOP_MODE = os.getenv("STREAMLIT_FILE_BROWSER_DEVELOP_MODE")
+
 CACHE_FILE_NAME = ".st-tree.cache"
 
 if _DEVELOP_MODE:
@@ -43,6 +43,7 @@ def render_static_file_server(
     path: str,
     static_file_server_path: str,
     show_choose_file: bool = False,
+    show_choose_folder: bool = False,
     show_download_file: bool = False,
     show_delete_file: bool = False,
     show_new_folder: bool = False,
@@ -57,6 +58,7 @@ def render_static_file_server(
         path=path,
         static_file_server_path=static_file_server_path,
         show_choose_file=show_choose_file,
+        show_choose_folder=show_choose_folder,
         show_download_file=show_download_file,
         show_delete_file=show_delete_file,
         show_new_folder=show_new_folder,
@@ -309,12 +311,11 @@ def ensure_tree_cache(
     cache_path = os.path.join(path, CACHE_FILE_NAME)
     if use_cache and not force_rebuild and os.path.exists(cache_path):
         with open(cache_path, "r") as cache_file:
-            files = json.load(cache_file)
-            return files
+            return json.load(cache_file)
 
     root = pathlib.Path(os.path.abspath(path))
 
-    files = [
+    _files = [
         root / f
         for f in glob.glob(
             root_dir=path,
@@ -323,19 +324,43 @@ def ensure_tree_cache(
             limit=limit,
         )
     ]
-    for ignore in file_ignores or []:
-        files = filter(
-            lambda f: (not ignore.match(os.path.basename(f)))
-            if isinstance(ignore, re.Pattern)
-            else (os.path.basename(f) not in file_ignores),
-            files,
-        )
-    files = [_get_file_info(str(root), str(path)) for path in files]
+    
+    ignore_collection = {}
+    def _check_ignore(f, ignore):
+        if isinstance(ignore, re.Pattern):
+            if not ignore.match(os.path.basename(f)):
+                return True
+            else:
+                ignore_collection[os.path.dirname(f)] = False
+                return False
+        elif type(ignore) == str:
+            if os.path.basename(f) in ignore:
+                ignore_collection[os.path.dirname(f)] = False
+                return False
+            else:
+                return True
+            
+    retain_parent, current_file_ignores = (file_ignores.get("retain_parent", False), file_ignores.get("rules", [])) if type(file_ignores) == dict else (False, file_ignores or [])
+
+    for ignore in current_file_ignores or []:
+        _files = list(filter(lambda f: _check_ignore(f, ignore), _files))
+    
+    
+        
+    files = [_get_file_info(str(root), str(path)) for path in _files]
+    if retain_parent:
+        for f in _files:
+            parent = os.path.dirname(f)
+            if parent in ignore_collection:
+                ignore_collection[parent] = True
+
+        redeem_dir = [path for path, exist in ignore_collection.items() if not exist]
+        for redeem in redeem_dir:
+            files.append(_get_file_info(str(root), f"{redeem.rstrip('/')}/"))
 
     if use_cache:
         with open(cache_path, "w+") as cache_file:
             json.dump(files, cache_file)
-
     return files
 
 
@@ -351,6 +376,7 @@ def st_file_browser(
     extentions=None,
     show_delete_file=False,
     show_choose_file=False,
+    show_choose_folder=False,
     show_download_file=True,
     show_new_folder=False,
     show_upload_file=False,
@@ -372,6 +398,7 @@ def st_file_browser(
             path,
             static_file_server_path,
             show_choose_file,
+            show_choose_folder,
             show_download_file,
             show_delete_file,
             show_new_folder,
@@ -385,7 +412,7 @@ def st_file_browser(
             limit,
             use_cache=use_cache,
         )
-
+        
         files = (
             [file for file in files if str(file["path"]).endswith(extentions)]
             if extentions
@@ -404,6 +431,7 @@ def st_file_browser(
         event = _component_func(
             files=files,
             show_choose_file=show_choose_file,
+            show_choose_folder=show_choose_folder,
             show_download_file=show_download_file,
             show_delete_file=show_delete_file,
             ignore_file_select_event=ignore_file_select_event,
@@ -412,7 +440,7 @@ def st_file_browser(
             key=key,
             **other_params,
         )
-    if event:
+    if event and type(event) == dict and "type" in event:
         if event["type"] == "SELECT_FILE" and (
             (not select_filetype_ignores)
             or (
@@ -499,8 +527,11 @@ if _DEVELOP_MODE or os.getenv("SHOW_FILE_BROWSER_DEMO"):
     
     event = st_file_browser(
         os.path.join(current_path, "..", "example_artifacts"),
-        file_ignores=("a.py", "a.txt", re.compile(".*.pdb")),
+        file_ignores={ "retain_parent": True, "rules": ("a.py", "a.txt", "b.txt", re.compile(".*.pdb")) },
+        # file_ignores=("a.py", "a.txt", re.compile(".*.pdb")),
         key="A",
+        show_choose_file=True,
+        show_choose_folder=True,
         sort=sort,
     )
     st.write(event)
