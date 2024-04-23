@@ -1,7 +1,54 @@
-import React from 'react'
-import PropTypes from 'prop-types'
+import React from "react"
 
-const Actions = (props) => {
+export interface ISelectItem {
+  key: string
+  keyDerived: string
+  action: string
+}
+
+export interface IIconsProps {
+  Folder: JSX.Element
+  Rename: JSX.Element
+  Delete: JSX.Element
+  Download: JSX.Element
+  Loading: JSX.Element
+}
+
+export interface IActionsProps {
+  selectedItems: ISelectItem[]
+  isFolder: boolean
+  icons: IIconsProps
+  nameFilter: string
+
+  canCreateFolder: boolean
+  onCreateFolder: () => void
+
+  canRenameFile: boolean
+  onRenameFile: () => void
+
+  canRenameFolder: boolean
+  onRenameFolder: () => void
+
+  canDeleteFile: boolean
+  onDeleteFile: () => void
+
+  canDeleteFolder: boolean
+  onDeleteFolder: () => void
+
+  canDownloadFile: boolean
+  onDownloadFile: () => void
+
+  canDownloadFolder: boolean
+  onDownloadFolder: () => void
+
+  canChooseFile: boolean
+  onChooseFile: () => void
+
+  canChooseFolder: boolean
+  onChooseFolder: () => void
+}
+
+const Actions: React.FC<IActionsProps> = (props) => {
   const {
     selectedItems,
     isFolder,
@@ -36,26 +83,28 @@ const Actions = (props) => {
     onChooseFolder,
   } = props
 
-  /** @type any */
-  let actions = []
+  let actions: JSX.Element[] | JSX.Element = []
 
   if (selectedItems.length) {
     // Something is selected. Build custom actions depending on what it is.
-    const selectedItemsAction = selectedItems.filter(item => item.action)
-    if (selectedItemsAction.length === selectedItems.length && [...new Set(selectedItemsAction)].length === 1) {
+    const selectedItemsAction = selectedItems.filter((item) => item.action)
+    if (
+      selectedItemsAction.length === selectedItems.length &&
+      [...new Set(selectedItemsAction)].length === 1
+    ) {
       // Selected item has an active action against it. Disable all other actions.
       let actionText
       switch (selectedItemsAction[0].action) {
-        case 'delete':
-          actionText = 'Deleting ...'
+        case "delete":
+          actionText = "Deleting ..."
           break
 
-        case 'rename':
-          actionText = 'Renaming ...'
+        case "rename":
+          actionText = "Renaming ..."
           break
 
         default:
-          actionText = 'Moving ...'
+          actionText = "Moving ..."
           break
       }
 
@@ -69,11 +118,7 @@ const Actions = (props) => {
       if (isFolder && canCreateFolder && !nameFilter) {
         actions.push(
           <li key="action-add-folder">
-            <a
-              onClick={onCreateFolder}
-              href="#"
-              role="button"
-            >
+            <a onClick={onCreateFolder} href="#" role="button">
               {icons.Folder}
               &nbsp;Add Subfolder
             </a>
@@ -81,15 +126,18 @@ const Actions = (props) => {
         )
       }
 
-      const itemsWithoutKeyDerived = selectedItems.find(item => !item.keyDerived)
-      if (!itemsWithoutKeyDerived && !isFolder && canRenameFile && selectedItems.length === 1) {
+      const itemsWithoutKeyDerived = selectedItems.find(
+        (item) => !item.keyDerived
+      )
+      if (
+        !itemsWithoutKeyDerived &&
+        !isFolder &&
+        canRenameFile &&
+        selectedItems.length === 1
+      ) {
         actions.push(
           <li key="action-rename">
-            <a
-              onClick={onRenameFile}
-              href="#"
-              role="button"
-            >
+            <a onClick={onRenameFile} href="#" role="button">
               {icons.Rename}
               &nbsp;Rename
             </a>
@@ -98,11 +146,7 @@ const Actions = (props) => {
       } else if (!itemsWithoutKeyDerived && isFolder && canRenameFolder) {
         actions.push(
           <li key="action-rename">
-            <a
-              onClick={onRenameFolder}
-              href="#"
-              role="button"
-            >
+            <a onClick={onRenameFolder} href="#" role="button">
               {icons.Rename}
               &nbsp;Rename
             </a>
@@ -113,11 +157,7 @@ const Actions = (props) => {
       if (!itemsWithoutKeyDerived && !isFolder && canDeleteFile) {
         actions.push(
           <li key="action-delete">
-            <a
-              onClick={onDeleteFile}
-              href="#"
-              role="button"
-            >
+            <a onClick={onDeleteFile} href="#" role="button">
               {icons.Delete}
               &nbsp;Delete
             </a>
@@ -170,9 +210,9 @@ const Actions = (props) => {
       }
 
       if (actions.length) {
-        actions = (<ul className="item-actions">{actions}</ul>)
+        actions = <ul className="item-actions">{actions}</ul>
       } else {
-        actions = (<div className="item-actions">&nbsp;</div>)
+        actions = <div className="item-actions">&nbsp;</div>
       }
     }
   } else {
@@ -180,11 +220,7 @@ const Actions = (props) => {
     if (canCreateFolder && !nameFilter) {
       actions.push(
         <li key="action-add-folder">
-          <a
-            onClick={onCreateFolder}
-            href="#"
-            role="button"
-          >
+          <a onClick={onCreateFolder} href="#" role="button">
             {icons.Folder}
             &nbsp;Add Folder
           </a>
@@ -193,81 +229,13 @@ const Actions = (props) => {
     }
 
     if (actions.length) {
-      actions = (<ul className="item-actions">{actions}</ul>)
+      actions = <ul className="item-actions">{actions}</ul>
     } else {
-      actions = (<div className="item-actions">&nbsp;</div>)
+      actions = <div className="item-actions">&nbsp;</div>
     }
   }
 
   return actions
-}
-
-Actions.propTypes = {
-  selectedItems: PropTypes.arrayOf(PropTypes.object),
-  isFolder: PropTypes.bool,
-  icons: PropTypes.object,
-  nameFilter: PropTypes.string,
-
-  canCreateFolder: PropTypes.bool,
-  onCreateFolder: PropTypes.func,
-
-  canRenameFile: PropTypes.bool,
-  onRenameFile: PropTypes.func,
-
-  canRenameFolder: PropTypes.bool,
-  onRenameFolder: PropTypes.func,
-
-  canDeleteFile: PropTypes.bool,
-  onDeleteFile: PropTypes.func,
-
-  canDeleteFolder: PropTypes.bool,
-  onDeleteFolder: PropTypes.func,
-
-  canDownloadFile: PropTypes.bool,
-  onDownloadFile: PropTypes.func,
-
-  canDownloadFolder: PropTypes.bool,
-  onDownloadFolder: PropTypes.func,
-
-  canChooseFile: PropTypes.bool,
-  onChooseFile: PropTypes.func,
-
-  canChooseFolder: PropTypes.bool,
-  onChooseFolder: PropTypes.func,
-}
-
-Actions.defaultProps = {
-  selectedItems: [],
-  isFolder: false,
-  icons: {},
-  nameFilter: '',
-
-  canCreateFolder: false,
-  onCreateFolder: null,
-
-  canRenameFile: false,
-  onRenameFile: null,
-
-  canRenameFolder: false,
-  onRenameFolder: null,
-
-  canDeleteFile: false,
-  onDeleteFile: null,
-
-  canDeleteFolder: false,
-  onDeleteFolder: null,
-
-  canDownloadFile: false,
-  onDownloadFile: null,
-
-  canDownloadFolder: false,
-  onDownloadFolder: null,
-
-  canChooseFile: false,
-  onChooseFile: null,
-
-  canChooseFolder: false,
-  onChooseFolder: null,
 }
 
 export default Actions
