@@ -14,6 +14,8 @@ import FileBrowser, {
 import get from "lodash.get"
 import IframeResizer from "iframe-resizer-react"
 import Actions from "./actions"
+import type { IActionsProps } from "./actions"
+
 import "react-keyed-file-browser/dist/react-keyed-file-browser.css"
 import "font-awesome/css/font-awesome.min.css"
 
@@ -67,6 +69,8 @@ interface IArgs {
   show_choose_file: boolean
   show_new_folder: boolean
   show_upload_file: boolean
+  show_rename_folder: boolean
+  show_rename_file: boolean
   ignore_file_select_event: boolean
   ignore_folder_select_event: boolean
   static_file_server_path: string
@@ -264,6 +268,13 @@ class FileBrowserNative extends StreamlitComponentBase<State> {
     this.args.files = remainingFiles
   }
 
+  createFolderHandler = (folderKey: string) => {
+    noticeStreamlit({
+      type: StreamlitEventType.CREATE_FOLDER,
+      target: { path: folderKey },
+    })
+  }
+
   chooseHandler = (keys: string[]) => {
     const folders = keys
       .filter((key) => key.endsWith("/"))
@@ -301,6 +312,31 @@ class FileBrowserNative extends StreamlitComponentBase<State> {
     }
   }
 
+  renameFileHandler = (oldFileKey: string, newFileKey: string) => {
+    const file = this.args.files.find((file) => file.path === oldFileKey)
+    file &&
+      noticeStreamlit({
+        type: StreamlitEventType.RENAME_FILE,
+        target: { path: newFileKey, name: file.name },
+      })
+  }
+
+  renameFolderHandler = (oldFolderKey: string, newFolderKey: string) => {
+    console.log("renameFolderHandler", oldFolderKey, newFolderKey)
+    const file = this.args.files.find(
+      (file) =>
+        file.path.substring(0, file.path.lastIndexOf("/") + 1) === oldFolderKey
+    )
+    file &&
+      noticeStreamlit({
+        type: StreamlitEventType.RENAME_FOLDER,
+        target: {
+          path: newFolderKey,
+          name: file.path.substring(0, file.path.lastIndexOf("/") + 1),
+        },
+      })
+  }
+
   convertFiles = (files: File[]): FileBrowserFile[] =>
     files.map((file) => ({
       key: file.path,
@@ -310,8 +346,6 @@ class FileBrowserNative extends StreamlitComponentBase<State> {
 
   noop = () => <></>
   public render = () => {
-    const that = this
-
     return (
       <div>
         <FileBrowser
@@ -327,30 +361,32 @@ class FileBrowserNative extends StreamlitComponentBase<State> {
           onSelectFolder={this.folderSelectedHandler}
           onDownloadFile={this.downlandHandler}
           onDeleteFile={this.deleteFileHandler}
-          actionRenderer={(...args: any) => {
+          onCreateFolder={this.createFolderHandler}
+          onRenameFile={this.renameFileHandler}
+          onRenameFolder={this.renameFolderHandler}
+          actionRenderer={(...args: IActionsProps[]) => {
             return Actions({
               ...args[0],
               ...{
-                canChooseFile: that.args.show_choose_file,
-                canChooseFolder: that.args.show_choose_folder,
+                canChooseFile: this.args.show_choose_file,
+                canChooseFolder: this.args.show_choose_folder,
+                canCreateFolder: this.args.show_new_folder,
+                canRenameFile: this.args.show_rename_file,
+                canRenameFolder: this.args.show_rename_folder,
                 canDownloadFile:
-                  that.args.show_download_file &&
-                  that.args.artifacts_download_site,
-                canDeleteFile: that.args.show_delete_file,
-                onChooseFolder: (keys: string[]) =>
-                  that.chooseHandler(
-                    args[0].selectedItems.map((i: any) => i.key)
-                  ),
-                onChooseFile: (keys: string[]) =>
-                  that.chooseHandler(
-                    args[0].selectedItems.map((i: any) => i.key)
-                  ),
-                onDeleteFile: (fileKey: string[]) =>
-                  that.deleteFileHandler(
-                    args[0].selectedItems.map((i: any) => i.key)
+                  this.args.show_download_file &&
+                  !!this.args.artifacts_download_site,
+                canDeleteFile: this.args.show_delete_file,
+                onChooseFolder: () =>
+                  this.chooseHandler(args[0].selectedItems.map((i) => i.key)),
+                onChooseFile: () =>
+                  this.chooseHandler(args[0].selectedItems.map((i) => i.key)),
+                onDeleteFile: () =>
+                  this.deleteFileHandler(
+                    args[0].selectedItems.map((i) => i.key)
                   ),
               },
-            })
+            }) as JSX.Element
           }}
         />
       </div>

@@ -22,6 +22,7 @@ from streamlit_molstar.auto import st_molstar_auto
 from streamlit_embeded import st_embeded
 
 _DEVELOP_MODE = os.getenv("STREAMLIT_FILE_BROWSER_DEVELOP_MODE")
+# _DEVELOP_MODE = True
 
 CACHE_FILE_NAME = ".st-tree.cache"
 
@@ -380,6 +381,8 @@ def st_file_browser(
     show_download_file=True,
     show_new_folder=False,
     show_upload_file=False,
+    show_rename_file=False,
+    show_rename_folder=False,
     limit=10000,
     artifacts_site=None,
     artifacts_download_site=None,
@@ -434,12 +437,16 @@ def st_file_browser(
             show_choose_folder=show_choose_folder,
             show_download_file=show_download_file,
             show_delete_file=show_delete_file,
+            show_new_folder=show_new_folder,
+            show_rename_file=show_rename_file,
+            show_rename_folder=show_rename_folder,
             ignore_file_select_event=ignore_file_select_event,
             artifacts_download_site=artifacts_download_site,
             artifacts_site=artifacts_site,
             key=key,
             **other_params,
         )
+
     if event and type(event) == dict and "type" in event:
         if event["type"] == "SELECT_FILE" and (
             (not select_filetype_ignores)
@@ -474,35 +481,12 @@ def st_file_browser(
                         overide_preview_handles=overide_preview_handles,
                         key=f"{key}-preview",
                     )
+
     return event
 
 
 if _DEVELOP_MODE or os.getenv("SHOW_FILE_BROWSER_DEMO"):
     current_path = os.path.dirname(os.path.abspath(__file__))
-    import time
-
-    st.header("Deep glob")
-    start_time = time.time()
-    # If you use the static file server, you must make sure
-    # that the path listened to by the static file server
-    # is the same as the path passed to st_file_browser by root.
-    event = st_file_browser(
-        os.path.join(current_path, "..", "example_artifacts/static_file_server/root"),
-        key="deep",
-        use_static_file_server=True,
-        show_choose_file=True,
-        show_delete_file=True,
-        show_download_file=False,
-        show_new_folder=True,
-        show_upload_file=False,
-        static_file_server_path="http://localhost:9999/?choose=true",
-    )
-    print(event)
-    end_time = time.time()
-    execution_time = end_time - start_time
-    st.write(f"代码段执行时间: {execution_time:.6f} 秒")
-    st.write(event)
-
     from streamlit_antd.tabs import st_antd_tabs
 
     tab_event = st_antd_tabs(
@@ -527,11 +511,17 @@ if _DEVELOP_MODE or os.getenv("SHOW_FILE_BROWSER_DEMO"):
     
     event = st_file_browser(
         os.path.join(current_path, "..", "example_artifacts"),
-        file_ignores={ "retain_parent": True, "rules": ("a.py", "a.txt", "b.txt", re.compile(".*.pdb")) },
-        # file_ignores=("a.py", "a.txt", re.compile(".*.pdb")),
+        file_ignores=("a.py", "a.txt", re.compile(".*.pdb")),
         key="A",
         show_choose_file=True,
         show_choose_folder=True,
+        show_delete_file=True,
+        show_download_file=True,
+        show_new_folder=True,
+        show_upload_file=True,
+        show_rename_file=True,
+        show_rename_folder=True,
+        use_cache=True,
         sort=sort,
     )
     st.write(event)
@@ -570,3 +560,29 @@ if _DEVELOP_MODE or os.getenv("SHOW_FILE_BROWSER_DEMO"):
         key="D",
     )
     st.write(event)
+    
+    
+    import time
+
+    st.header("Deep glob")
+    start_time = time.time()
+    # If you use the static file server, you must make sure
+    # that the path listened to by the static file server
+    # is the same as the path passed to st_file_browser by root.
+    event = st_file_browser(
+        os.path.join(current_path, "..", "example_artifacts/static_file_server/root"),
+        key="deep",
+        use_static_file_server=True,
+        show_choose_file=True,
+        show_delete_file=True,
+        show_download_file=False,
+        show_new_folder=True,
+        show_upload_file=False,
+        static_file_server_path="http://localhost:9999/?choose=true",
+    )
+    print(event)
+    end_time = time.time()
+    execution_time = end_time - start_time
+    st.write(f"代码段执行时间: {execution_time:.6f} 秒")
+    st.write(event)
+
